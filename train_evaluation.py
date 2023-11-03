@@ -148,7 +148,10 @@ def plot_mean_max(results, path):
 def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
+    
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    path = Path(folder)
+    path.mkdir(parents=True, exist_ok=True)
     for run in tqdm(range(n_runs)):
         tmp_results = {}
         for inx, balancer in tqdm(enumerate(balancers)):
