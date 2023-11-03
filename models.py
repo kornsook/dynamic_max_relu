@@ -8,9 +8,9 @@ def create_dense_model(input_shape):
     model = tf.keras.Sequential([
       Flatten(input_shape=input_shape),
       tf.keras.layers.Dense(flatten_size // 2),
-      MaxReLU(256),  # First hidden layer with learnable max values
+      MaxReLU(flatten_size // 2),  # First hidden layer with learnable max values
       tf.keras.layers.Dense(flatten_size // 4),
-      MaxReLU(128),  # Second hidden layer with learnable max values
+      MaxReLU(flatten_size // 4),  # Second hidden layer with learnable max values
       tf.keras.layers.Dense(10),  # Output layer for multi-label classification
       tf.keras.layers.Activation('softmax')
     ])
