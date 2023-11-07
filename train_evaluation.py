@@ -152,12 +152,12 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
-    for run in tqdm(range(n_runs)):
+    for run in range(n_runs):
         tmp_results = {}
-        for inx, balancer in tqdm(enumerate(balancers)):
+        for inx, balancer in enumerate(balancers):
             results_balancer = {}
             path = f"{folder}/balancer{balancer}_run{run}.h5"
-#             print(f"Run {run}, Balancer {balancer}:")            
+            print(f"Run {run}, Balancer {balancer}:")            
             if(not os.path.exists(path)):      
                 # Train the model
                 model = get_model(x_train.shape[1:], location)
@@ -205,14 +205,14 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    for run in tqdm(range(n_runs)):
+    for run in range(n_runs):
         tmp_results = {}
         for info in info_list:
             tmp_results[info] = []
-        for inx, balancer in tqdm(enumerate(balancers)):
+        for inx, balancer in enumerate(balancers):
             results_balancer = {}
             path = f"{folder}/balancer{balancer}_run{run}.h5"
-#             print(f"Run {run}, Balancer {balancer}:")
+            print(f"Run {run}, Balancer {balancer}:")
             model = get_model(x_train.shape[1:])
             # Compile the model with the custom loss function
             model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])

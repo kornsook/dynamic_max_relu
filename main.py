@@ -60,14 +60,20 @@ if __name__ == "__main__":
         model_fnc = create_dense_model
         if(args.drelu_loc == "end"):
             max_index = 4
+        elif(args.drelu_loc == "beginning"):
+            max_index = 2
     elif(args.model == "shallow_cnn"):
         model_fnc = create_shallow_cnn_model
         if(args.drelu_loc == "end"):
             max_index = 5
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     elif(args.model == "vgg16"):
         model_fnc = create_vgg16_model
         if(args.drelu_loc == "end"):
             max_index = 3
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     elif(args.model == "resnet50"):
         model_fnc = create_resnet50_model
         if(args.drelu_loc == "end"):
@@ -78,14 +84,20 @@ if __name__ == "__main__":
         model_fnc = create_resnet101_model
         if(args.drelu_loc == "end"):
             max_index = 3
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     elif(args.model == "mobilenetv2"):
         model_fnc = create_mobilenetv2_model
         if(args.drelu_loc == "end"):
             max_index = 3
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     elif(args.model == "inceptionv3"):
         model_fnc = create_inceptionv3_model
         if(args.drelu_loc == "end"):
             max_index = 4
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     if(args.type == "train"):
         print("Training...")
         train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc, 
