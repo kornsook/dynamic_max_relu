@@ -35,11 +35,12 @@ if __name__ == "__main__":
     parser.add_argument("--eps", type=float, help="Perturbation bound", default=0.1)
     parser.add_argument("--type", type=str, choices=["train", "test"], help="Train or test")
     parser.add_argument("--base-dir", type=str, help="Base directory for models and results")
+    parser.add_argument("--drelu-loc", type=str, choices=["end", "beginning", "all"], default="end", help="The location of layer that has D-ReLU")
 
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100, 10000]
-    folder = f'{args.base_dir}/models/{args.model}_{args.dataset}'
-    result_folder = f'{args.base_dir}/results/{args.model}_{args.dataset}'
+    folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
+    result_folder = f'{args.base_dir}/results/{args.drelu_loc}/{args.model}_{args.dataset}'
     if(args.dataset == "mnist"):
         # Load and preprocess the MNIST dataset
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -57,33 +58,44 @@ if __name__ == "__main__":
     
     if(args.model == "dense"):
         model_fnc = create_dense_model
-        max_index = 4
+        if(args.drelu_loc == "end"):
+            max_index = 4
     elif(args.model == "shallow_cnn"):
         model_fnc = create_shallow_cnn_model
-        max_index = 5
+        if(args.drelu_loc == "end"):
+            max_index = 5
     elif(args.model == "vgg16"):
         model_fnc = create_vgg16_model
-        max_index = 3
+        if(args.drelu_loc == "end"):
+            max_index = 3
     elif(args.model == "resnet50"):
         model_fnc = create_resnet50_model
-        max_index = 3
+        if(args.drelu_loc == "end"):
+            max_index = 3
+        elif(args.drelu_loc == "beginning"):
+            max_index = 1
     elif(args.model == "resnet101"):
         model_fnc = create_resnet101_model
-        max_index = 3
+        if(args.drelu_loc == "end"):
+            max_index = 3
     elif(args.model == "mobilenetv2"):
         model_fnc = create_mobilenetv2_model
-        max_index = 3
+        if(args.drelu_loc == "end"):
+            max_index = 3
     elif(args.model == "inceptionv3"):
         model_fnc = create_inceptionv3_model
-        max_index = 4
+        if(args.drelu_loc == "end"):
+            max_index = 4
     if(args.type == "train"):
+        print("Training...")
         train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc, 
-             x_train, y_train)
+             x_train, y_train, location = args.drelu_loc)
     elif(args.type == "test"):
+        print("Testing...")
         results = train_test(balancers, args.n_runs, 
                     max_index, folder,
                     result_folder,
                     model_fnc,
                     x_train, y_train, 
-                    x_test, y_test, args.eps, batch_size=args.batch_size)
+                    x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc)
     print("Done!")

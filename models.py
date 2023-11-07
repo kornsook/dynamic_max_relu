@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, ReLU, Dropout
-from MaxReLU import MaxReLU
+from MaxReLU import MaxReLU, MaxReLUConv2D
 
 def create_dense_model(input_shape):
     flatten_size = input_shape[0] * input_shape[1] * input_shape[2]
@@ -29,24 +29,32 @@ def create_shallow_cnn_model(input_shape):
     ])
     return model
 
-def create_vgg16_model(input_shape):
+def create_vgg16_model(input_shape, location = "end"):
+    model = tf.keras.Sequential()
+    if(location == "beginning"):
+        model.add(MaxReLUConv2D(units=64, kernel_size=(3, 3), trainable_max_values=True, input_shape = input_shape))
+        input_shape[2] = 64   
     backbone = tf.keras.applications.vgg16.VGG16(
         include_top=False,
         weights='imagenet',
         input_tensor=None,
         input_shape=input_shape,
         pooling='max',
-    )
-    model = tf.keras.Sequential([
-        backbone,
-        tf.keras.layers.Dense(256),
-        MaxReLU(256),  # Second hidden layer with learnable max values
-        tf.keras.layers.Dense(10),  
-        tf.keras.layers.Activation('softmax')# Output layer for multi-label classification
-    ])
+    ) 
+    model.add(backbone)
+    model.add(Dropout(0.3))
+    if(location == "end"):
+        model.add(tf.keras.layers.Dense(256))
+        model.add(MaxReLU(256))
+    model.add(tf.keras.layers.Dense(10))
+    model.add(tf.keras.layers.Activation('softmax'))
     return model
 
-def create_resnet50_model(input_shape):
+def create_resnet50_model(input_shape, location = "end"):    
+    model = tf.keras.Sequential()
+    if(location == "beginning"):
+        model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
+        model.add(MaxReLU(input_shape[2]))
     backbone = tf.keras.applications.resnet.ResNet50(
         include_top=False,
         weights='imagenet',
@@ -54,17 +62,17 @@ def create_resnet50_model(input_shape):
         input_shape=input_shape,
         pooling='max',
     )
-    model = tf.keras.Sequential([
-        backbone,
-        Dropout(0.3),
-        tf.keras.layers.Dense(256),
-        MaxReLU(256),  # Second hidden layer with learnable max values
-        tf.keras.layers.Dense(10),  
-        tf.keras.layers.Activation('softmax')# Output layer for multi-label classification
-    ])
+    model.add(backbone)
+    model.add(Dropout(0.3))
+    if(location == "end"):
+        model.add(tf.keras.layers.Dense(256))
+        model.add(MaxReLU(256))
+    model.add(tf.keras.layers.Dense(10))
+    model.add(tf.keras.layers.Activation('softmax'))
     return model
 
-def create_resnet101_model(input_shape):
+
+def create_resnet101_model(input_shape, location = "end"):
     backbone = tf.keras.applications.resnet.ResNet101(
         include_top=False,
         weights='imagenet',
@@ -82,7 +90,7 @@ def create_resnet101_model(input_shape):
     ])
     return model
 
-def create_mobilenetv2_model(input_shape):
+def create_mobilenetv2_model(input_shape, location = "end"):
     backbone = tf.keras.applications.mobilenet_v2.MobileNetV2(
         include_top=False,
         weights='imagenet',
@@ -100,7 +108,7 @@ def create_mobilenetv2_model(input_shape):
     ])
     return model
 
-def create_inceptionv3_model(input_shape):
+def create_inceptionv3_model(input_shape, location = "end"):
     backbone = tf.keras.applications.inception_v3.InceptionV3(
         include_top=False,
         weights='imagenet',

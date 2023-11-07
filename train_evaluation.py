@@ -145,7 +145,7 @@ def plot_mean_max(results, path):
     plt.ylabel('Mean Max')
     plt.savefig(path, dpi=450, bbox_inches="tight")
     plt.show()
-def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train):
+def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, location="end"):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
     
@@ -160,7 +160,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
 #             print(f"Run {run}, Balancer {balancer}:")            
             if(not os.path.exists(path)):      
                 # Train the model
-                model = get_model(x_train.shape[1:])
+                model = get_model(x_train.shape[1:], location)
                 # Compile the model with the custom loss function
                 model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
                 model.fit(x_train, y_train, epochs=2000, batch_size=128, validation_split=0.2
