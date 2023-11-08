@@ -170,7 +170,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
 #                 print("Already Exists!")
                 
 def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
-               , epsilon, batch_size=1, stored_results=None):
+               , epsilon, batch_size=1, stored_results=None, location="end"):
     info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                  , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
                  ,'cw_l2_accuracy','mean_max']
@@ -213,7 +213,7 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
             results_balancer = {}
             path = f"{folder}/balancer{balancer}_run{run}.h5"
             print(f"Run {run}, Balancer {balancer}:")
-            model = get_model(x_train.shape[1:])
+            model = get_model(x_train.shape[1:], location = location)
             # Compile the model with the custom loss function
             model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
             if(os.path.exists(path)):
