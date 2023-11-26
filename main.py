@@ -102,6 +102,7 @@ if __name__ == "__main__":
             max_index = 1
     if(args.type == "train"):
         print("Training...")
+        print(args.adv_training)
         if(args.adv_training):
             adversarial_train_models(balancers, args.n_runs, max_index, folder, model_fnc, 
              x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
