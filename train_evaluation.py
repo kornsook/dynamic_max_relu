@@ -357,5 +357,5 @@ def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, 
     with open(accuracy_score_path, "wb") as outfile:
         pickle.dump(results, outfile)
     for key, item in results.items():
-        print(f"{key}: {np.mean(items)}")
+        print(f"{key}: {np.mean(item)}")
     return results
