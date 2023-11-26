@@ -296,3 +296,65 @@ def adversarial_train_models(balancers, n_runs, max_index, folder, get_model, x_
             model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
             model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
             model.save_weights(path)
+            
+def adversarial_train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
+               , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5):
+    info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
+                 , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
+                 ,'cw_l2_accuracy','mean_max']
+    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy', 
+                   'apgd_ce_accuracy', 'apgd_dlr_accuracy', 
+                   'cw_l2_accuracy']
+    acc2attack = {
+        'random_accuracy': 'random',
+        'fgsm_accuracy': 'fgsm',
+        'pgd_accuracy': 'pgd',
+        'apgd_ce_accuracy': 'apgd_ce',
+        'apgd_dlr_accuracy': 'apgd_dlr',
+        'cw_l2_accuracy': 'cw_l2'
+    }
+    result_folder += f'/adv_training/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
+    accuracy_score_path = result_folder + '/accuracy_scores.pkl'
+    
+    results = {}
+    if(os.path.exists(accuracy_score_path)):
+        f = open(accuracy_score_path, "rb")
+        results = pickle.load(f)
+    for info in info_list:
+        if(info not in results):
+            results[info] = []
+    path = Path(folder)
+    path.mkdir(parents=True, exist_ok=True)
+    results_path = Path(result_folder)
+    results_path.mkdir(parents=True, exist_ok=True)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                              patience=5, min_lr=0.0001)
+    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    for run in range(n_runs):
+        path = f"{folder}/run{run}.h5"
+        print(f"Run {run}:")
+        model = get_model(x_train.shape[1:], location = location)
+        # Compile the model with the custom loss function
+        model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
+        if(os.path.exists(path)):
+            model.load_weights(path)
+        else:        
+            # Train the model
+            X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
+            model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
+            model.save_weights(path)
+
+        # Evaluate the model on the test set
+        test_loss, test_accuracy = model.evaluate(x_test, y_test)
+        tmp_results['accuracy'].append(test_accuracy)    
+        for acc_attack in acc_attacks:
+            if(len(results[acc_attack]) <= run):
+                results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
+        if(len(results['mean_max']) <= run):
+            results['mean_max'].append(np.mean(model.layers[max_index].max_values))
+    with open(accuracy_score_path, "wb") as outfile:
+        pickle.dump(results, outfile)
+    for key, item in results.items():
+        print(f"{key}: {np.mean(items)}")
+    return results

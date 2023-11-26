@@ -16,7 +16,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from MaxReLU import MaxReLU
 from models import create_dense_model, create_shallow_cnn_model, create_vgg16_model, create_resnet50_model, create_resnet101_model, create_mobilenetv2_model, create_inceptionv3_model
-from train_evaluation import train_models,train_test, adversarial_train_models
+from train_evaluation import train_models,train_test, adversarial_train_models, adversarial_train_test
 import argparse
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -111,10 +111,19 @@ if __name__ == "__main__":
              x_train, y_train, location = args.drelu_loc)
     elif(args.type == "test"):
         print("Testing...")
-        results = train_test(balancers, args.n_runs, 
+        if(args.adv_training):
+            results = adversarial_train_test(balancers, args.n_runs, 
                     max_index, folder,
                     result_folder,
                     model_fnc,
                     x_train, y_train, 
-                    x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc)
+                    x_test, y_test, args.eps, batch_size=args.batch_size, 
+                    location = args.drelu_loc, adv_epochs=args.adv_epochs)
+        else:
+            results = train_test(balancers, args.n_runs, 
+                        max_index, folder,
+                        result_folder,
+                        model_fnc,
+                        x_train, y_train, 
+                        x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc)
     print("Done!")
