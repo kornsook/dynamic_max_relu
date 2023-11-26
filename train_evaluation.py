@@ -293,7 +293,6 @@ def adversarial_train_models(balancers, n_runs, max_index, folder, get_model, x_
             model = get_model(X_train.shape[1:], location)
             # Compile the model with the custom loss function
             model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
-            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val)
-                      , callbacks=[reduce_lr, early_stop], verbose=1)
-            model = adversarial_training(model, X_train, Y_train, X_val, y_val, adv_epochs, 128, "pgd", epsilon)
+            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
+            model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
             model.save_weights(path)
