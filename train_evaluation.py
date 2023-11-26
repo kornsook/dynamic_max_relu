@@ -262,7 +262,7 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
       X_batch = X[j * batch_size : min(len(X), (j+1) * batch_size)]
       Y_batch = y[j * batch_size : min(len(X), (j+1) * batch_size)]
 #       print("Generate adversarial training batch...")
-      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size verbose = False)      
+      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size, verbose = False)      
       model.train_on_batch(adv_X_train, Y_batch)
     print("\nGenerate adversarial val set...")
     adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size verbose = False)
