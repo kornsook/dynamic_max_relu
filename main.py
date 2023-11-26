@@ -16,7 +16,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from MaxReLU import MaxReLU
 from models import create_dense_model, create_shallow_cnn_model, create_vgg16_model, create_resnet50_model, create_resnet101_model, create_mobilenetv2_model, create_inceptionv3_model
-from train_evaluation import train_models,train_test
+from train_evaluation import train_models,train_test, adversarial_train_models
 import argparse
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -36,6 +36,8 @@ if __name__ == "__main__":
     parser.add_argument("--type", type=str, choices=["train", "test"], help="Train or test")
     parser.add_argument("--base-dir", type=str, help="Base directory for models and results")
     parser.add_argument("--drelu-loc", type=str, choices=["end", "beginning", "all"], default="end", help="The location of layer that has D-ReLU")
+    parser.add_argument("--adv-training", action="store_false", help="Adversarial training ?")
+    parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
 
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100, 10000]
@@ -100,7 +102,11 @@ if __name__ == "__main__":
             max_index = 1
     if(args.type == "train"):
         print("Training...")
-        train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc, 
+        if(args.adv_training):
+            adversarial_train_models(balancers, args.n_runs, max_index, folder, model_fnc, 
+             x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
+        else:
+            train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc, 
              x_train, y_train, location = args.drelu_loc)
     elif(args.type == "test"):
         print("Testing...")

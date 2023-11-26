@@ -252,3 +252,48 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
 #     plot_perturbation(results, result_folder + '/perturbation_plot.png')
     plot_mean_max(results, result_folder + '/mean_max_plot.png')
     return results
+
+def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, eps):
+  n_batches = len(X) // batch_size + (len(X) % batch_size != 0)
+  for i in range(epochs):
+#     print(f"Epoch {i+1}:", )
+    for j in tqdm(range(n_batches)):
+#       print(f"\rBatch {j+1}/{n_batches}", end = "")
+      X_batch = X[j * batch_size : min(len(X), (j+1) * batch_size)]
+      Y_batch = y[j * batch_size : min(len(X), (j+1) * batch_size)]
+#       print("Generate adversarial training batch...")
+      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size verbose = False)      
+      model.train_on_batch(adv_X_train, Y_batch)
+    print("\nGenerate adversarial val set...")
+    adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size verbose = False)
+    # new_X_val = tf.concat((X_val, adv_X_val), 0)
+    # new_y_val = tf.concat((y_val, y_val), 0)
+    val_loss, val_acc = model.evaluate(X_val, y_val, batch_size = batch_size, verbose = False)
+    adv_val_loss, adv_val_acc = model.evaluate(adv_X_val, y_val, batch_size = batch_size, verbose = False)
+    print(f"Epoch {i+1}: Val loss: {val_loss}, Val acc: {val_acc}, ", end = "")
+    print(f"Rob val loss: {adv_val_loss}, Rob val acc: {adv_val_acc}")
+#     if(save_epoch):
+#       model.save_weights(f"{initial}_epoch{i+1}.h5")
+  return model
+
+def adversarial_train_models(balancers, n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end"):
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                              patience=5, min_lr=0.0001)
+    
+    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    folder += '/adv_training'
+    path = Path(folder)
+    path.mkdir(parents=True, exist_ok=True)
+    for run in range(n_runs):
+        path = f"{folder}/run{run}.h5"
+        print(f"Run {run}:")            
+        if(not os.path.exists(path)):      
+            X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+            # Train the model
+            model = get_model(X_train.shape[1:], location)
+            # Compile the model with the custom loss function
+            model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
+            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val)
+                      , callbacks=[reduce_lr, early_stop], verbose=1)
+            model = adversarial_training(model, X_train, Y_train, X_val, y_val, adv_epochs, 128, "pgd", epsilon)
+            model.save_weights(path)
