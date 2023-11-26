@@ -31,7 +31,7 @@ def random_noise(model, image, epsilon=0.1):
     
     return perturbed_image
 
-def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size=1, norm=np.inf):
+def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size=1, norm=np.inf, verbose = True):
     num_samples = len(x_data)
     new_dataset = []
     if(attack == 'cw_l2'):
@@ -41,7 +41,7 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
         tmp_model = utils_tf2.ModelAdapter(tmp_model)
         adversary = AutoAttack(tmp_model, norm='Linf', eps=epsilon, version='rand', is_tf_model=True
                                , verbose=False)
-    for i in tqdm(range(0, num_samples, batch_size)):
+    for i in tqdm(range(0, num_samples, batch_size), disable= not verbose):
         original_image = x_data[i:min(num_samples, i+batch_size)]
         true_label = y_data[i:min(num_samples, i+batch_size)]
         
@@ -262,10 +262,10 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
       X_batch = X[j * batch_size : min(len(X), (j+1) * batch_size)]
       Y_batch = y[j * batch_size : min(len(X), (j+1) * batch_size)]
 #       print("Generate adversarial training batch...")
-      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size)      
+      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size, verbose = False)      
       model.train_on_batch(adv_X_train, Y_batch)
     print("\nGenerate adversarial val set...")
-    adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size)
+    adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size, verbose=False)
     # new_X_val = tf.concat((X_val, adv_X_val), 0)
     # new_y_val = tf.concat((y_val, y_val), 0)
     val_loss, val_acc = model.evaluate(X_val, y_val, batch_size = batch_size, verbose = False)
