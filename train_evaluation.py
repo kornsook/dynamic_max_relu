@@ -265,7 +265,7 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
       adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size, verbose = False)      
       model.train_on_batch(adv_X_train, Y_batch)
     print("\nGenerate adversarial val set...")
-    adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size, verbose=False)
+    adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size)
     # new_X_val = tf.concat((X_val, adv_X_val), 0)
     # new_y_val = tf.concat((y_val, y_val), 0)
     val_loss, val_acc = model.evaluate(X_val, y_val, batch_size = batch_size, verbose = False)
