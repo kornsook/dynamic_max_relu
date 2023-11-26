@@ -313,6 +313,7 @@ def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, 
         'apgd_dlr_accuracy': 'apgd_dlr',
         'cw_l2_accuracy': 'cw_l2'
     }
+    folder += '/adv_training'
     result_folder += f'/adv_training/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
     
