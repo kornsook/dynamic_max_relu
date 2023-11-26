@@ -276,7 +276,7 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
 #       model.save_weights(f"{initial}_epoch{i+1}.h5")
   return model
 
-def adversarial_train_models(balancers, n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end"):
+def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end"):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
     
@@ -297,7 +297,7 @@ def adversarial_train_models(balancers, n_runs, max_index, folder, get_model, x_
             model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
             model.save_weights(path)
             
-def adversarial_train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
+def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
                , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5):
     info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                  , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
@@ -335,7 +335,7 @@ def adversarial_train_test(balancers, n_runs, max_index, folder, result_folder, 
         print(f"Run {run}:")
         model = get_model(x_train.shape[1:], location = location)
         # Compile the model with the custom loss function
-        model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
+        model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
         if(os.path.exists(path)):
             model.load_weights(path)
         else:        
