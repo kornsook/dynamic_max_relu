@@ -251,6 +251,9 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
     plot_accuracy(results, result_folder + '/accuracy_plot.png')
 #     plot_perturbation(results, result_folder + '/perturbation_plot.png')
     plot_mean_max(results, result_folder + '/mean_max_plot.png')
+    for key, item in results.items():
+        if(key != "balancers"):
+            print(f"{key}: {np.mean(item, axis=0)}")
     return results
 
 def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, eps):
