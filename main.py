@@ -22,7 +22,7 @@ import argparse
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Your Script Description")
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument("--type", type=str, choices=["train", "test"], help="Train or test")
     parser.add_argument("--base-dir", type=str, help="Base directory for models and results")
     parser.add_argument("--drelu-loc", type=str, choices=["end", "beginning", "all"], default="end", help="The location of layer that has D-ReLU")
-    parser.add_argument("--adv-training", action="store_true", help="Adversarial training ?")
+    parser.add_argument("--training-type", type=str, choices=["normal", "adv_traing", "trades"], default="normal", help="Type of training")
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
 
     args = parser.parse_args()
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
         _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
         # Normalize pixel values to be between 0 and 1
-        x_train, x_test = np.expand_dims(x_train / 255.0, -1).astype(np.float32), np.expand_dims(x_test / 255.0, -1).astype(np.float32)    
+        x_train, x_test = np.expand_dims(x_train / 255.0, -1).astype(np.float32), np.expand_dims(x_test / 255.0, -1).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32), y_test.astype(np.int32)
     elif(args.dataset == "cifar10"):
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -56,8 +56,8 @@ if __name__ == "__main__":
 
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
-        y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)    
-    
+        y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+
     if(args.model == "dense"):
         model_fnc = create_dense_model
         if(args.drelu_loc == "end"):
@@ -102,27 +102,44 @@ if __name__ == "__main__":
             max_index = 1
     if(args.type == "train"):
         print("Training...")
-        if(args.adv_training):
-            adversarial_train_models(args.n_runs, max_index, folder, model_fnc, 
+        if(args.training_type == 'adv_training'):
+            folder += '/adv_training'
+            adversarial_train_models(args.n_runs, max_index, folder, model_fnc,
+             x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
+        elif(args.training_type == 'trades'):
+            folder += '/trades'
+            trades_train_models(args.n_runs, max_index, folder, model_fnc,
              x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
         else:
-            train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc, 
+            train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
              x_train, y_train, location = args.drelu_loc)
     elif(args.type == "test"):
         print("Testing...")
-        if(args.adv_training):
-            results = adversarial_train_test(args.n_runs, 
+        if(args.training-type == 'adv_training'):
+            folder += '/adv_training'
+            result_folder += '/adv_training'
+            results = adversarial_test(args.n_runs,
                     max_index, folder,
                     result_folder,
                     model_fnc,
-                    x_train, y_train, 
-                    x_test, y_test, args.eps, batch_size=args.batch_size, 
+                    x_train, y_train,
+                    x_test, y_test, args.eps, batch_size=args.batch_size,
+                    location = args.drelu_loc, adv_epochs=args.adv_epochs)
+        elif(args.training_type == 'trades'):
+            folder += '/trades'
+            result_folder += '/trades'
+            results = adversarial_test(args.n_runs,
+                    max_index, folder,
+                    result_folder,
+                    model_fnc,
+                    x_train, y_train,
+                    x_test, y_test, args.eps, batch_size=args.batch_size,
                     location = args.drelu_loc, adv_epochs=args.adv_epochs)
         else:
-            results = train_test(balancers, args.n_runs, 
+            results = test(balancers, args.n_runs,
                         max_index, folder,
                         result_folder,
                         model_fnc,
-                        x_train, y_train, 
+                        x_train, y_train,
                         x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc)
     print("Done!")

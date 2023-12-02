@@ -24,11 +24,11 @@ def custom_loss(model, alpha=0.01, index=4):
 def random_noise(model, image, epsilon=0.1):
     # Generate random noise within the range [-epsilon, epsilon]
     noise = tf.random.uniform(shape=image.shape, minval=-epsilon, maxval=epsilon, dtype=image.dtype)
-    
+
     # Add the noise to the original image
     perturbed_image = image + noise
     perturbed_image = tf.clip_by_value(perturbed_image, clip_value_min=0.0, clip_value_max=1.0)
-    
+
     return perturbed_image
 
 def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size=1, norm=np.inf, verbose = True):
@@ -44,18 +44,18 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
     for i in tqdm(range(0, num_samples, batch_size), disable= not verbose):
         original_image = x_data[i:min(num_samples, i+batch_size)]
         true_label = y_data[i:min(num_samples, i+batch_size)]
-        
+
         if(attack == 'fgsm'):
-            perturbed_image = fast_gradient_method.fast_gradient_method(model_fn = model, 
-                                                                        x = original_image, 
+            perturbed_image = fast_gradient_method.fast_gradient_method(model_fn = model,
+                                                                        x = original_image,
                                                                         eps = epsilon,
                                                                         norm = norm,
                                                                         clip_min=0,
                                                                         clip_max=1,
                                                                         y=true_label)
         elif(attack == 'pgd'):
-            perturbed_image = madry_et_al.madry_et_al(model_fn = model, 
-                                                    x = original_image, 
+            perturbed_image = madry_et_al.madry_et_al(model_fn = model,
+                                                    x = original_image,
                                                     eps = epsilon,
                                                     eps_iter = epsilon / 10,
                                                     nb_iter = 100,
@@ -148,7 +148,7 @@ def plot_mean_max(results, path):
 def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, location="end"):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
-    
+
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
@@ -157,8 +157,8 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
         for inx, balancer in enumerate(balancers):
             results_balancer = {}
             path = f"{folder}/balancer{balancer}_run{run}.h5"
-            print(f"Run {run}, Balancer {balancer}:")            
-            if(not os.path.exists(path)):      
+            print(f"Run {run}, Balancer {balancer}:")
+            if(not os.path.exists(path)):
                 # Train the model
                 model = get_model(x_train.shape[1:], location)
                 # Compile the model with the custom loss function
@@ -168,14 +168,14 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
                 model.save_weights(path)
 #             else:
 #                 print("Already Exists!")
-                
-def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
+
+def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
                , epsilon, batch_size=1, stored_results=None, location="end"):
     info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                  , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
                  ,'cw_l2_accuracy','mean_max']
-    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy', 
-                   'apgd_ce_accuracy', 'apgd_dlr_accuracy', 
+    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
+                   'apgd_ce_accuracy', 'apgd_dlr_accuracy',
                    'cw_l2_accuracy']
     acc2attack = {
         'random_accuracy': 'random',
@@ -187,7 +187,7 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
     }
     result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
-    
+
     results = {}
     if(os.path.exists(accuracy_score_path)):
         f = open(accuracy_score_path, "rb")
@@ -218,16 +218,13 @@ def train_test(balancers, n_runs, max_index, folder, result_folder, get_model, x
             model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
             if(os.path.exists(path)):
                 model.load_weights(path)
-            else:        
-                # Train the model
-                model.fit(x_train, y_train, epochs=2000, batch_size=128, validation_split=0.2
-                          , callbacks=[reduce_lr, early_stop], verbose=1)
-                model.save_weights(path)
-
+            else:
+                print(f"No model for balancer {balancer}, run {run}")
+                continue
             # Evaluate the model on the test set
             test_loss, test_accuracy = model.evaluate(x_test, y_test)
 #             print(f"Test loss: {test_loss:.4f}, Test accuracy: {test_accuracy:.4f}")
-            tmp_results['accuracy'].append(test_accuracy)    
+            tmp_results['accuracy'].append(test_accuracy)
             for acc_attack in acc_attacks:
                 if(len(results[acc_attack]) <= run):
                     tmp_results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
@@ -265,7 +262,7 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
       X_batch = X[j * batch_size : min(len(X), (j+1) * batch_size)]
       Y_batch = y[j * batch_size : min(len(X), (j+1) * batch_size)]
 #       print("Generate adversarial training batch...")
-      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size, verbose = False)      
+      adv_X_train = create_adversarial_examples(model, X_batch, Y_batch, epsilon = eps, attack=attack, batch_size=batch_size, verbose = False)
       model.train_on_batch(adv_X_train, Y_batch)
     print("\nGenerate adversarial val set...")
     adv_X_val = create_adversarial_examples(model, X_val, y_val, epsilon = eps, attack=attack, batch_size=batch_size)
@@ -282,15 +279,15 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
 def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end"):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
-    
+
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
     folder += '/adv_training'
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
     for run in range(n_runs):
         path = f"{folder}/run{run}.h5"
-        print(f"Run {run}:")            
-        if(not os.path.exists(path)):      
+        print(f"Run {run}:")
+        if(not os.path.exists(path)):
             X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
             # Train the model
             model = get_model(X_train.shape[1:], location)
@@ -299,14 +296,14 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
             model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
             model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
             model.save_weights(path)
-            
-def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
+
+def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
                , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5):
     info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                  , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
                  ,'cw_l2_accuracy','mean_max']
-    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy', 
-                   'apgd_ce_accuracy', 'apgd_dlr_accuracy', 
+    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
+                   'apgd_ce_accuracy', 'apgd_dlr_accuracy',
                    'cw_l2_accuracy']
     acc2attack = {
         'random_accuracy': 'random',
@@ -316,10 +313,9 @@ def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, 
         'apgd_dlr_accuracy': 'apgd_dlr',
         'cw_l2_accuracy': 'cw_l2'
     }
-    folder += '/adv_training'
-    result_folder += f'/adv_training/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
+    result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
-    
+
     results = {}
     if(os.path.exists(accuracy_score_path)):
         f = open(accuracy_score_path, "rb")
@@ -342,16 +338,14 @@ def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, 
         model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
         if(os.path.exists(path)):
             model.load_weights(path)
-        else:        
+        else:
             # Train the model
-            X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
-            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
-            model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
-            model.save_weights(path)
+            print(f"No model for run {run}")
+            continue
 
         # Evaluate the model on the test set
         test_loss, test_accuracy = model.evaluate(x_test, y_test)
-        results['accuracy'].append(test_accuracy)    
+        results['accuracy'].append(test_accuracy)
         for acc_attack in acc_attacks:
             if(len(results[acc_attack]) <= run):
                 results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
@@ -362,3 +356,134 @@ def adversarial_train_test(n_runs, max_index, folder, result_folder, get_model, 
     for key, item in results.items():
         print(f"{key}: {np.mean(item)}")
     return results
+
+
+
+def trades_loss(model,
+                x_natural,
+                y,
+                step_size=0.003,
+                epsilon=0.01,
+                perturb_steps=10,
+                beta=1.0,
+                distance='l_inf'):
+    # Define KL-loss
+    criterion_kl = tf.keras.losses.KLDivergence()
+    batch_size = tf.shape(x_natural)[0]
+
+    model.trainable = False
+    # model.trainable_variables = []
+
+    # Generate adversarial example
+    x_adv = x_natural + 0.001 * tf.random.normal(shape=tf.shape(x_natural))
+
+    if distance == 'l_inf':
+        for _ in range(perturb_steps):
+            x_adv = tf.Variable(x_adv, trainable=True)
+
+            with tf.GradientTape() as tape:
+                logits_adv = model(x_adv)
+                logits_natural = model(x_natural)
+
+                loss_kl = criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+                                       tf.nn.softmax(logits_natural, axis=1))
+
+            gradients = tape.gradient(loss_kl, x_adv)
+            x_adv = x_adv + step_size * tf.sign(gradients)
+            x_adv = tf.clip_by_value(x_adv, x_natural - epsilon, x_natural + epsilon)
+            x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
+
+    elif distance == 'l_2':
+        delta = 0.001 * tf.random.normal(shape=tf.shape(x_natural))
+        delta = tf.Variable(delta, trainable=True)
+
+        optimizer_delta = tf.keras.optimizers.SGD(learning_rate=epsilon / (perturb_steps * 2))
+
+        for _ in range(perturb_steps):
+            adv = x_natural + delta
+
+            with tf.GradientTape() as tape:
+                logits_adv = model(adv)
+                logits_natural = model(x_natural)
+
+                loss = (-1) * criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+                                           tf.nn.softmax(logits_natural, axis=1))
+
+            gradients = tape.gradient(loss, delta)
+            grad_norms = tf.norm(gradients, ord=2, axis=(1, 2, 3))
+            delta.assign(tf.math.divide_no_nan(gradients, tf.reshape(grad_norms, [-1, 1, 1, 1])))
+
+            if tf.math.reduce_any(tf.math.equal(grad_norms, 0)):
+                delta.assign(tf.random.normal(shape=tf.shape(delta)))
+
+            optimizer_delta.apply_gradients([(gradients, delta)])
+
+            # Projection
+            delta.assign_add(x_natural)
+            delta.assign(tf.clip_by_value(delta, 0, 1))
+            delta.assign(tf.clip_by_norm(delta - x_natural, epsilon, axes=[1, 2, 3]))
+
+        x_adv = x_natural + delta
+
+    else:
+        x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
+
+    model.trainable = True
+
+    # Calculate robust loss
+    logits_natural = model(x_natural)
+    logits_adv = model(x_adv)
+
+    loss_natural = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)(y, logits_natural))
+    loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+                                                                              tf.nn.softmax(logits_natural, axis=1))
+    loss = loss_natural + beta * loss_robust
+
+    return loss
+
+def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end", batch_size=128):
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                              patience=5, min_lr=0.0001)
+
+    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    folder += '/adv_training'
+    path = Path(folder)
+    path.mkdir(parents=True, exist_ok=True)
+    num_epochs = 2000
+    # Set up an optimizer
+    optimizer = tf.keras.optimizers.Adam()
+    for run in range(n_runs):
+        path = f"{folder}/run{run}.h5"
+        print(f"Run {run}:")
+        if(not os.path.exists(path)):
+            # Compile the model with the custom loss function
+            model.compile(optimizer=optimizer)
+            X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+            # Train the model
+            model = get_model(X_train.shape[1:], location)
+            for epoch in range(num_epochs):
+                print(f"\nEpoch {epoch + 1}/{num_epochs}")
+
+                # Training
+                for step in range(0, len(x_train), batch_size):
+                    x_batch = X_train[step:step + batch_size]
+                    y_batch = Y_train[step:step + batch_size]
+
+                    with tf.GradientTape() as tape:
+                        loss = trades_loss(model, x_batch, y_batch, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+
+                    gradients = tape.gradient(loss, model.trainable_variables)
+                    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+                # Validation
+                val_loss = model.evaluate(X_val, Y_val, batch_size=batch_size)
+
+                # Print validation loss
+                print(f"Validation Loss: {val_loss}")
+
+                # Update learning rate and check for early stopping
+                reduce_lr.on_epoch_end(epoch, logs={'val_loss': val_loss})
+                if early_stop.on_epoch_end(epoch, logs={'val_loss': val_loss}):
+                    print("Early stopping.")
+                    break
+            model.save_weights(path)
