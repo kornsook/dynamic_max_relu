@@ -50,6 +50,7 @@ if __name__ == "__main__":
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = np.expand_dims(x_train / 255.0, -1).astype(np.float32), np.expand_dims(x_test / 255.0, -1).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32), y_test.astype(np.int32)
+        beta = 1.0
     elif(args.dataset == "cifar10"):
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
         _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
@@ -57,6 +58,7 @@ if __name__ == "__main__":
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+        beta = 6.0
 
     if(args.model == "dense"):
         model_fnc = create_dense_model
@@ -109,7 +111,7 @@ if __name__ == "__main__":
         elif(args.training_type == 'trades'):
             folder += '/trades'
             trades_train_models(args.n_runs, max_index, folder, model_fnc,
-             x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
+             x_train, y_train, args.eps, beta, adv_epochs = args.adv_epochs, location = args.drelu_loc)
         else:
             train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
              x_train, y_train, location = args.drelu_loc)

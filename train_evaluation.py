@@ -361,10 +361,10 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
 def trades_loss(model,
                 x_natural,
                 y,
+                beta,
                 step_size=0.003,
                 epsilon=0.01,
                 perturb_steps=10,
-                beta=1.0,
                 distance='l_inf'):
     # Define KL-loss
     criterion_kl = tf.keras.losses.KLDivergence()
@@ -440,7 +440,7 @@ def trades_loss(model,
 
     return loss
 
-def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end", batch_size=128):
+def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, adv_epochs = 100, location="end", batch_size=128):
     class CustomEarlyStopping(EarlyStopping):
         def __init__(self, monitor='val_loss', patience=0, verbose=0, mode='min', restore_best_weights=False):
             super().__init__(monitor=monitor, patience=patience, verbose=verbose, mode=mode, restore_best_weights=restore_best_weights)
@@ -486,7 +486,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             with tf.GradientTape() as tape:
                 # Assuming trades_loss is your loss function
                 loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                , x_batch_val, y_batch_val, epsilon=epsilon, step_size=step_size)
+                , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size)
 
             val_loss += loss.numpy()
             pred = model.predict(x_batch_val, verbose=0).argmax(axis = 1)
@@ -527,7 +527,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
 
                     with tf.GradientTape() as tape:
                         loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                        , x_batch, y_batch, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
