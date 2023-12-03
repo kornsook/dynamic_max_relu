@@ -16,7 +16,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from MaxReLU import MaxReLU
 from models import create_dense_model, create_shallow_cnn_model, create_vgg16_model, create_resnet50_model, create_resnet101_model, create_mobilenetv2_model, create_inceptionv3_model
-from train_evaluation import train_models,train_test, adversarial_train_models, adversarial_train_test
+from train_evaluation import train_models,test, adversarial_train_models, adversarial_test, trades_train_models
 import argparse
 
 gpus = tf.config.experimental.list_physical_devices('GPU')

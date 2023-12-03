@@ -281,7 +281,6 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
                               patience=5, min_lr=0.0001)
 
     early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    folder += '/adv_training'
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
     for run in range(n_runs):
@@ -442,48 +441,109 @@ def trades_loss(model,
     return loss
 
 def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end", batch_size=128):
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                              patience=5, min_lr=0.0001)
+    class CustomEarlyStopping(EarlyStopping):
+        def __init__(self, monitor='val_loss', patience=0, verbose=0, mode='min', restore_best_weights=False):
+            super().__init__(monitor=monitor, patience=patience, verbose=verbose, mode=mode, restore_best_weights=restore_best_weights)
+            self.best_metric = float('inf') if mode == 'min' else float('-inf')
 
-    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    folder += '/adv_training'
+        def on_epoch_end(self, epoch, logs=None):
+            current_metric = logs.get(self.monitor)
+            if current_metric is None:
+                print(f"Warning: Early stopping conditioned on metric `{self.monitor}` which is not available. Available metrics are: {','.join(logs.keys())}")
+                return
+
+            print(f"Current {self.monitor}: {current_metric}, Best {self.monitor}: {self.best_metric}")
+            # print(self.monitor_op(0, 1))
+            # print(self.monitor_op(1,0))
+            if self.monitor_op(current_metric, self.best_metric):
+                self.best_metric = current_metric
+                self.wait = 0
+                if self.restore_best_weights:
+                    self.best_weights = self.model.get_weights()
+                print(f"Improved! Resetting wait count to 0.")
+            else:
+                self.wait += 1
+                print(f"No improvement. Wait count: {self.wait}")
+                if self.wait >= self.patience:
+                    self.stopped_epoch = epoch
+                    self.model.stop_training = True
+                    if self.restore_best_weights and self.best_weights is not None:
+                        self.model.set_weights(self.best_weights)
+                    print(f"\nEarly stopping conditioned on metric `{self.monitor}` improved, stopping training.")
+                    return True
+                else:
+                    print(f"Still waiting. Training continues.")
+            return False
+    def val_func(model, x_val, y_val, batch_size, epsilon, step_size):
+        val_loss = 0.0
+        val_acc = 0.0
+        num_batches = (len(x_val) // batch_size) + (len(x_val) % batch_size)
+
+        for step in tqdm(range(0, len(x_val), batch_size)):
+            x_batch_val = x_val[step:step + batch_size]
+            y_batch_val = y_val[step:step + batch_size]
+
+            with tf.GradientTape() as tape:
+                # Assuming trades_loss is your loss function
+                loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                , x_batch_val, y_batch_val, epsilon=epsilon, step_size=step_size)
+
+            val_loss += loss.numpy()
+            pred = model.predict(x_batch_val, verbose=0).argmax(axis = 1)
+            val_acc += np.sum(pred == y_batch_val)
+            # print(pred)
+            # print(y_val)
+            # print(val_acc)
+        # Calculate average validation loss
+        avg_val_loss = val_loss / num_batches
+        return avg_val_loss, val_acc / len(x_val)
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
     num_epochs = 2000
-    # Set up an optimizer
-    optimizer = tf.keras.optimizers.Adam()
     for run in range(n_runs):
         path = f"{folder}/run{run}.h5"
         print(f"Run {run}:")
         if(not os.path.exists(path)):
-            # Compile the model with the custom loss function
-            model.compile(optimizer=optimizer)
             X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+            # Set up an optimizer
+            optimizer = tf.keras.optimizers.Adam()
             # Train the model
             model = get_model(X_train.shape[1:], location)
+            # Compile the model with the custom loss function
+            model.compile(optimizer=optimizer)
+            reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                      patience=5, min_lr=0.0001, verbose=1)
+
+            early_stop = CustomEarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+            reduce_lr.set_model(model)
+            early_stop.set_model(model)
             for epoch in range(num_epochs):
                 print(f"\nEpoch {epoch + 1}/{num_epochs}")
 
                 # Training
-                for step in range(0, len(x_train), batch_size):
+                for step in tqdm(range(0, len(x_train), batch_size)):
                     x_batch = X_train[step:step + batch_size]
                     y_batch = Y_train[step:step + batch_size]
 
                     with tf.GradientTape() as tape:
-                        loss = trades_loss(model, x_batch, y_batch, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                        , x_batch, y_batch, epsilon=epsilon, step_size = epsilon/10.0 * 3)
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
                 # Validation
-                val_loss = model.evaluate(X_val, Y_val, batch_size=batch_size)
+                val_loss , val_acc = val_func(model, X_val, Y_val, 128, epsilon, epsilon/10.0 * 3)
 
                 # Print validation loss
-                print(f"Validation Loss: {val_loss}")
+                print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
 
                 # Update learning rate and check for early stopping
                 reduce_lr.on_epoch_end(epoch, logs={'val_loss': val_loss})
                 if early_stop.on_epoch_end(epoch, logs={'val_loss': val_loss}):
                     print("Early stopping.")
+                    model.set_weights(early_stop.model.get_weights())
+                    val_loss , val_acc = val_func(model, X_val, Y_val, 128, epsilon, epsilon/10.0 * 3)
+                    print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
                     break
             model.save_weights(path)
