@@ -145,7 +145,7 @@ def plot_mean_max(results, path):
     plt.ylabel('Mean Max')
     plt.savefig(path, dpi=450, bbox_inches="tight")
     plt.show()
-def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, location="end"):
+def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, location="end", batch_size=128):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
 
@@ -163,7 +163,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
                 model = get_model(x_train.shape[1:], location)
                 # Compile the model with the custom loss function
                 model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
-                model.fit(x_train, y_train, epochs=2000, batch_size=128, validation_split=0.2
+                model.fit(x_train, y_train, epochs=2000, batch_size=batch_size, validation_split=0.2
                           , callbacks=[reduce_lr, early_stop], verbose=1)
                 model.save_weights(path)
 #             else:
@@ -276,7 +276,7 @@ def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, 
 #       model.save_weights(f"{initial}_epoch{i+1}.h5")
   return model
 
-def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end"):
+def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, adv_epochs = 100, location="end", batch_size=128):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
 
@@ -292,8 +292,8 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
             model = get_model(X_train.shape[1:], location)
             # Compile the model with the custom loss function
             model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
-            model.fit(X_train, Y_train, epochs=2000, batch_size=128, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
-            model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, 128, "pgd", epsilon)
+            model.fit(X_train, Y_train, epochs=2000, batch_size=batch_size, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
+            model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, batch_size, "pgd", epsilon)
             model.save_weights(path)
 
 def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
@@ -434,7 +434,7 @@ def trades_loss(model,
     logits_adv = model(x_adv)
 
     loss_natural = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)(y, logits_natural))
-    loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+    loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.softmax(logits_adv, axis=1),
                                                                               tf.nn.softmax(logits_natural, axis=1))
     loss = loss_natural + beta * loss_robust
 
@@ -533,7 +533,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
                 # Validation
-                val_loss , val_acc = val_func(model, X_val, Y_val, 128, epsilon, epsilon/10.0 * 3)
+                val_loss , val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
 
                 # Print validation loss
                 print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
@@ -543,7 +543,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 if early_stop.on_epoch_end(epoch, logs={'val_loss': val_loss}):
                     print("Early stopping.")
                     model.set_weights(early_stop.model.get_weights())
-                    val_loss , val_acc = val_func(model, X_val, Y_val, 128, epsilon, epsilon/10.0 * 3)
+                    val_loss , val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
                     print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
                     break
             model.save_weights(path)

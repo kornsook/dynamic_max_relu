@@ -107,14 +107,16 @@ if __name__ == "__main__":
         if(args.training_type == 'adv_training'):
             folder += '/adv_training'
             adversarial_train_models(args.n_runs, max_index, folder, model_fnc,
-             x_train, y_train, args.eps, adv_epochs = args.adv_epochs, location = args.drelu_loc)
+             x_train, y_train, args.eps, adv_epochs = args.adv_epochs,
+             location = args.drelu_loc, batch_size=args.batch_size)
         elif(args.training_type == 'trades'):
             folder += '/trades'
             trades_train_models(args.n_runs, max_index, folder, model_fnc,
-             x_train, y_train, args.eps, beta, adv_epochs = args.adv_epochs, location = args.drelu_loc)
+             x_train, y_train, args.eps, beta, adv_epochs = args.adv_epochs,
+             location = args.drelu_loc, batch_size=args.batch_size)
         else:
             train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
-             x_train, y_train, location = args.drelu_loc)
+             x_train, y_train, location = args.drelu_loc, batch_size=args.batch_size)
     elif(args.type == "test"):
         print("Testing...")
         if(args.training-type == 'adv_training'):
