@@ -433,11 +433,12 @@ def trades_loss(model,
     logits_natural = model(x_natural)
     logits_adv = model(x_adv)
 
+    small_added = 1e-10
     loss_natural = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)(y, logits_natural))
-    loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.softmax(logits_adv, axis=1),
-                                                                              tf.nn.softmax(logits_natural, axis=1))
+    loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.softmax(logits_adv, axis=1) + small_added,
+                                                                              tf.nn.softmax(logits_natural, axis=1) + small_added)
     loss = loss_natural + beta * loss_robust
-
+    print(f"Loss Nat: {loss_natural}, Loss Rob: {loss_robust}")
     return loss
 
 def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, adv_epochs = 100, location="end", batch_size=128):
