@@ -536,8 +536,8 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                         # loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
                         # , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
                         # Calculate robust loss
-                        outs = model(x_natural)
-                        loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y, outs))
+                        outs = model(x_batch)
+                        loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y_batch, outs))
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
