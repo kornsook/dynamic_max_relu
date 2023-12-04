@@ -367,7 +367,7 @@ def trades_loss(model,
                 perturb_steps=10,
                 distance='l_inf'):
     # Define KL-loss
-    criterion_kl = tf.keras.losses.KLDivergence()
+    criterion_kl = tf.keras.losses.KLDivergence(reduction=tf.keras.losses.Reduction.SUM)
     batch_size = tf.shape(x_natural)[0]
 
     model.trainable = False
@@ -438,8 +438,8 @@ def trades_loss(model,
     loss_robust = (1.0 / tf.cast(batch_size, dtype=tf.float32)) * criterion_kl(tf.nn.softmax(logits_adv, axis=1) + small_added,
                                                                               tf.nn.softmax(logits_natural, axis=1) + small_added)
     loss = loss_natural + beta * loss_robust
-    print(f"Loss Nat: {loss_natural}, Loss Rob: {loss_robust}")
-    return loss
+    # print(f"Loss Nat: {loss_natural}, Loss Rob: {loss_robust}")
+    return loss, loss_natural, loss_robust
 
 def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, adv_epochs = 100, location="end", batch_size=128):
     class CustomEarlyStopping(EarlyStopping):
@@ -477,6 +477,8 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             return False
     def val_func(model, x_val, y_val, batch_size, epsilon, step_size):
         val_loss = 0.0
+        val_loss_nat = 0.0
+        val_loss_robust = 0.0
         val_acc = 0.0
         num_batches = (len(x_val) // batch_size) + (len(x_val) % batch_size)
 
@@ -486,10 +488,12 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
 
             with tf.GradientTape() as tape:
                 # Assuming trades_loss is your loss function
-                loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                loss, loss_nat, loss_robust = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
                 , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size)
 
             val_loss += loss.numpy()
+            val_loss_nat = loss_nat.numpy()
+            val_loss_robust = loss_robust.numpy()
             pred = model.predict(x_batch_val, verbose=0).argmax(axis = 1)
             val_acc += np.sum(pred == y_batch_val)
             # print(pred)
@@ -497,7 +501,9 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             # print(val_acc)
         # Calculate average validation loss
         avg_val_loss = val_loss / num_batches
-        return avg_val_loss, val_acc / len(x_val)
+        avg_val_loss_nat = val_loss_nat / num_batches
+        avg_val_loss_robust = val_loss_robust / num_batches
+        return avg_val_loss, avg_val_loss_nat, avg_val_loss_robust, val_acc / len(x_val)
     path = Path(folder)
     path.mkdir(parents=True, exist_ok=True)
     num_epochs = 2000
@@ -522,29 +528,27 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 print(f"\nEpoch {epoch + 1}/{num_epochs}")
 
                 # Training
-                for step in tqdm(range(0, len(x_train), batch_size)):
+                for step in tqdm(range(0, len(X_train), batch_size)):
                     x_batch = X_train[step:step + batch_size]
                     y_batch = Y_train[step:step + batch_size]
 
                     with tf.GradientTape() as tape:
-                        loss = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                        loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
                         , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
                 # Validation
-                val_loss , val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
+                val_loss , val_loss_nat, val_loss_robust, val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
 
                 # Print validation loss
-                print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
+                print(f"Validation Loss: {val_loss}, Validation Natural Loss: {val_loss_nat}, Validation Robust Loss: {val_loss_robust}, Validation Acc: {val_acc}")
 
                 # Update learning rate and check for early stopping
                 reduce_lr.on_epoch_end(epoch, logs={'val_loss': val_loss})
                 if early_stop.on_epoch_end(epoch, logs={'val_loss': val_loss}):
                     print("Early stopping.")
                     model.set_weights(early_stop.model.get_weights())
-                    val_loss , val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
-                    print(f"Validation Loss: {val_loss}, Validation Acc: {val_acc}")
                     break
             model.save_weights(path)
