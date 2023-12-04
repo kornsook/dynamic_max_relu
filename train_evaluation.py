@@ -513,7 +513,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
         if(not os.path.exists(path)):
             X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
             # Set up an optimizer
-            optimizer = tf.keras.optimizers.Adam()
+            optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
             # Train the model
             model = get_model(X_train.shape[1:], location)
             # Compile the model with the custom loss function
@@ -543,7 +543,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 val_loss , val_loss_nat, val_loss_robust, val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
 
                 # Print validation loss
-                print(f"Validation Loss: {val_loss}, Validation Natural Loss: {val_loss_nat}, Validation Robust Loss: {val_loss_robust}, Validation Acc: {val_acc}")
+                print(f"Epoch {epoch + 1}, Trianing Loss: {loss.numpy()}, Validation Loss: {val_loss}, Validation Natural Loss: {val_loss_nat}, Validation Robust Loss: {val_loss_robust}, Validation Acc: {val_acc}")
 
                 # Update learning rate and check for early stopping
                 reduce_lr.on_epoch_end(epoch, logs={'val_loss': val_loss})
