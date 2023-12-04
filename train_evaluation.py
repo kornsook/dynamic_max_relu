@@ -492,8 +492,8 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size)
 
             val_loss += loss.numpy()
-            val_loss_nat = loss_nat.numpy()
-            val_loss_robust = loss_robust.numpy()
+            val_loss_nat += loss_nat.numpy()
+            val_loss_robust += loss_robust.numpy()
             pred = model.predict(x_batch_val, verbose=0).argmax(axis = 1)
             val_acc += np.sum(pred == y_batch_val)
             # print(pred)
