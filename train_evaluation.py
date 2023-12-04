@@ -513,7 +513,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
         if(not os.path.exists(path)):
             X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
             # Set up an optimizer
-            optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
+            optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             # Train the model
             model = get_model(X_train.shape[1:], location)
             # Compile the model with the custom loss function
@@ -533,11 +533,11 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                     y_batch = Y_train[step:step + batch_size]
 
                     with tf.GradientTape() as tape:
-                        # loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                        # , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                        , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
                         # Calculate robust loss
-                        outs = model(x_batch, training=True)
-                        loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y_batch, outs))
+                        # outs = model(x_batch, training=True)
+                        # loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y_batch, outs))
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
