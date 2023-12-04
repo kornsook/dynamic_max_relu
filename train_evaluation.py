@@ -533,8 +533,11 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                     y_batch = Y_train[step:step + batch_size]
 
                     with tf.GradientTape() as tape:
-                        loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                        , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        # loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
+                        # , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        # Calculate robust loss
+                        outs = model(x_natural)
+                        loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y, outs))
 
                     gradients = tape.gradient(loss, model.trainable_variables)
                     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -543,7 +546,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 val_loss , val_loss_nat, val_loss_robust, val_acc = val_func(model, X_val, Y_val, batch_size, epsilon, epsilon/10.0 * 3)
 
                 # Print validation loss
-                print(f"Epoch {epoch + 1}, Trianing Loss: {loss.numpy()}, Validation Loss: {val_loss}, Validation Natural Loss: {val_loss_nat}, Validation Robust Loss: {val_loss_robust}, Validation Acc: {val_acc}")
+                print(f"Epoch {epoch + 1}, Training Loss: {loss.numpy()}, Validation Loss: {val_loss}, Validation Natural Loss: {val_loss_nat}, Validation Robust Loss: {val_loss_robust}, Validation Acc: {val_acc}")
 
                 # Update learning rate and check for early stopping
                 reduce_lr.on_epoch_end(epoch, logs={'val_loss': val_loss})
