@@ -119,7 +119,7 @@ if __name__ == "__main__":
              x_train, y_train, location = args.drelu_loc, batch_size=args.batch_size)
     elif(args.type == "test"):
         print("Testing...")
-        if(args.training-type == 'adv_training'):
+        if(args.training_type == 'adv_training'):
             folder += '/adv_training'
             result_folder += '/adv_training'
             results = adversarial_test(args.n_runs,
