@@ -332,7 +332,7 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
     for run in range(n_runs):
         path = f"{folder}/run{run}.h5"
         print(f"Run {run}:")
-        model = get_model(x_train.shape[1:], location = location)
+        model = get_model(x_train.shape[1:], location = location, activation="relu")
         # Compile the model with the custom loss function
         model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
         if(os.path.exists(path)):
@@ -515,7 +515,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             # Set up an optimizer
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             # Train the model
-            model = get_model(X_train.shape[1:], location)
+            model = get_model(X_train.shape[1:], location, activation="relu")
             # Compile the model with the custom loss function
             model.compile(optimizer=optimizer)
             reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
