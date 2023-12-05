@@ -112,7 +112,7 @@ if __name__ == "__main__":
         elif(args.training_type == 'trades'):
             folder += '/trades'
             trades_train_models(args.n_runs, max_index, folder, model_fnc,
-             x_train, y_train, args.eps, beta, adv_epochs = args.adv_epochs,
+             x_train, y_train, args.eps, beta,
              location = args.drelu_loc, batch_size=args.batch_size)
         else:
             train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,

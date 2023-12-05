@@ -334,7 +334,7 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         print(f"Run {run}:")
         model = get_model(x_train.shape[1:], location = location, activation="relu")
         # Compile the model with the custom loss function
-        model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
+        model.compile(optimizer='adam', metrics=['accuracy'])
         if(os.path.exists(path)):
             model.load_weights(path)
         else:
@@ -442,7 +442,7 @@ def trades_loss(model,
     # print(f"Loss Nat: {loss_natural}, Loss Rob: {loss_robust}")
     return loss, loss_natural, loss_robust
 
-def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, adv_epochs = 100, location="end", batch_size=128):
+def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, location="end", batch_size=128):
     class CustomEarlyStopping(EarlyStopping):
         def __init__(self, monitor='val_loss', patience=0, verbose=0, mode='min', restore_best_weights=False):
             super().__init__(monitor=monitor, patience=patience, verbose=verbose, mode=mode, restore_best_weights=restore_best_weights)
@@ -519,6 +519,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             model = get_model(X_train.shape[1:], location, activation="relu")
             # Compile the model with the custom loss function
             model.compile(optimizer=optimizer)
+            # model.summary()
             reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                       patience=5, min_lr=0.0001, verbose=1)
 
