@@ -365,7 +365,8 @@ def trades_loss(model,
                 step_size=0.003,
                 epsilon=0.01,
                 perturb_steps=10,
-                distance='l_inf'):
+                distance='l_inf',
+                training = True):
     # Define KL-loss
     criterion_kl = tf.keras.losses.KLDivergence(reduction=tf.keras.losses.Reduction.SUM)
     batch_size = tf.shape(x_natural)[0]
@@ -430,8 +431,8 @@ def trades_loss(model,
     model.trainable = True
 
     # Calculate robust loss
-    logits_natural = model(x_natural)
-    logits_adv = model(x_adv)
+    logits_natural = model(x_natural,training = training)
+    logits_adv = model(x_adv, training=training)
 
     small_added = 1e-10
     loss_natural = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)(y, logits_natural))
@@ -489,7 +490,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             with tf.GradientTape() as tape:
                 # Assuming trades_loss is your loss function
                 loss, loss_nat, loss_robust = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size)
+                , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size, training=False)
 
             val_loss += loss.numpy()
             val_loss_nat += loss_nat.numpy()
