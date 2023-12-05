@@ -300,7 +300,7 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
                , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5):
     info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                  , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
-                 ,'cw_l2_accuracy','mean_max']
+                 ,'cw_l2_accuracy']
     acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
                    'apgd_ce_accuracy', 'apgd_dlr_accuracy',
                    'cw_l2_accuracy']
@@ -348,8 +348,8 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         for acc_attack in acc_attacks:
             if(len(results[acc_attack]) <= run):
                 results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
-        if(len(results['mean_max']) <= run):
-            results['mean_max'].append(np.mean(model.layers[max_index].max_values))
+        # if(len(results['mean_max']) <= run):
+        #     results['mean_max'].append(np.mean(model.layers[max_index].max_values))
     with open(accuracy_score_path, "wb") as outfile:
         pickle.dump(results, outfile)
     for key, item in results.items():
