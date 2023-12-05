@@ -364,7 +364,7 @@ def trades_loss(model,
                 beta,
                 step_size=0.003,
                 epsilon=0.01,
-                perturb_steps=10,
+                perturb_steps=100,
                 distance='l_inf',
                 training = True):
     # Define KL-loss
@@ -378,20 +378,30 @@ def trades_loss(model,
     x_adv = x_natural + 0.001 * tf.random.normal(shape=tf.shape(x_natural))
 
     if distance == 'l_inf':
-        for _ in range(perturb_steps):
-            x_adv = tf.Variable(x_adv, trainable=True)
-
-            with tf.GradientTape() as tape:
-                logits_adv = model(x_adv)
-                logits_natural = model(x_natural)
-
-                loss_kl = criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
-                                       tf.nn.softmax(logits_natural, axis=1))
-
-            gradients = tape.gradient(loss_kl, x_adv)
-            x_adv = x_adv + step_size * tf.sign(gradients)
-            x_adv = tf.clip_by_value(x_adv, x_natural - epsilon, x_natural + epsilon)
-            x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
+        x_adv = madry_et_al.madry_et_al(model_fn = model,
+                                                x = x_natural,
+                                                eps = epsilon,
+                                                eps_iter = epsilon / 10,
+                                                nb_iter = 100,
+                                                norm = np.inf,
+                                                clip_min=0,
+                                                clip_max=1,
+                                                y=y,
+                                                sanity_checks=False)
+        # for _ in range(perturb_steps):
+        #     x_adv = tf.Variable(x_adv, trainable=True)
+        #
+        #     with tf.GradientTape() as tape:
+        #         logits_adv = model(x_adv)
+        #         logits_natural = model(x_natural)
+        #
+        #         loss_kl = criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+        #                                tf.nn.softmax(logits_natural, axis=1))
+        #
+        #     gradients = tape.gradient(loss_kl, x_adv)
+        #     x_adv = x_adv + step_size * tf.sign(gradients)
+        #     x_adv = tf.clip_by_value(x_adv, x_natural - epsilon, x_natural + epsilon)
+        #     x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
 
     elif distance == 'l_2':
         delta = 0.001 * tf.random.normal(shape=tf.shape(x_natural))
