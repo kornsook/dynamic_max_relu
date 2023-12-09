@@ -499,11 +499,11 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
         for step in tqdm(range(0, len(x_val), batch_size)):
             x_batch_val = x_val[step:step + batch_size]
             y_batch_val = y_val[step:step + batch_size]
-
+            x_adv = create_adversarial_examples(model, x_batch_val, y_batch_val, epsilon = epsilon, attack='pgd', batch_size=batch_size, verbose = False)
             with tf.GradientTape() as tape:
                 # Assuming trades_loss is your loss function
                 loss, loss_nat, loss_robust = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                , x_batch_val, y_batch_val, beta, epsilon=epsilon, step_size=step_size, training=False)
+                , x_batch_val, y_batch_val, beta, x_adv=x_adv)
 
             val_loss += loss.numpy()
             val_loss_nat += loss_nat.numpy()
