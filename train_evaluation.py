@@ -291,7 +291,8 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
             # Train the model
             model = get_model(X_train.shape[1:], location, activation = "relu")
             # Compile the model with the custom loss function
-            model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
+            # model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
+            model.compile(optimizer='adam', loss="sparse_categorical_crossentropy", metrics=['accuracy'])
             model.fit(X_train, Y_train, epochs=2000, batch_size=batch_size, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
             model = adversarial_training(model, X_train, Y_train, X_val, Y_val, adv_epochs, batch_size, "pgd", epsilon)
             model.save_weights(path)
@@ -366,79 +367,81 @@ def trades_loss(model,
                 epsilon=0.01,
                 perturb_steps=100,
                 distance='l_inf',
-                training = True):
+                training = True,
+                x_adv = None):
     # Define KL-loss
     criterion_kl = tf.keras.losses.KLDivergence(reduction=tf.keras.losses.Reduction.SUM)
     batch_size = tf.shape(x_natural)[0]
 
-    model.trainable = False
+    # model.trainable = False
     # model.trainable_variables = []
 
-    # Generate adversarial example
-    x_adv = x_natural + 0.001 * tf.random.normal(shape=tf.shape(x_natural))
+    if(x_adv == None):
+        # Generate adversarial example
+        x_adv = x_natural + 0.001 * tf.random.normal(shape=tf.shape(x_natural))
+        if distance == 'l_inf':
+            x_adv = create_adversarial_examples(model, x_natural, y, epsilon = epsilon, attack='pgd', batch_size=batch_size, verbose = False)
+            # x_adv = madry_et_al.madry_et_al(model_fn = model,
+            #                                         x = x_natural,
+            #                                         eps = epsilon,
+            #                                         eps_iter = epsilon / 10,
+            #                                         nb_iter = 100,
+            #                                         norm = np.inf,
+            #                                         clip_min=0,
+            #                                         clip_max=1,
+            #                                         y=y,
+            #                                         sanity_checks=False)
+            # for _ in range(perturb_steps):
+            #     x_adv = tf.Variable(x_adv, trainable=True)
+            #
+            #     with tf.GradientTape() as tape:
+            #         logits_adv = model(x_adv)
+            #         logits_natural = model(x_natural)
+            #
+            #         loss_kl = criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+            #                                tf.nn.softmax(logits_natural, axis=1))
+            #
+            #     gradients = tape.gradient(loss_kl, x_adv)
+            #     x_adv = x_adv + step_size * tf.sign(gradients)
+            #     x_adv = tf.clip_by_value(x_adv, x_natural - epsilon, x_natural + epsilon)
+            #     x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
 
-    if distance == 'l_inf':
-        x_adv = madry_et_al.madry_et_al(model_fn = model,
-                                                x = x_natural,
-                                                eps = epsilon,
-                                                eps_iter = epsilon / 10,
-                                                nb_iter = 100,
-                                                norm = np.inf,
-                                                clip_min=0,
-                                                clip_max=1,
-                                                y=y,
-                                                sanity_checks=False)
-        # for _ in range(perturb_steps):
-        #     x_adv = tf.Variable(x_adv, trainable=True)
-        #
-        #     with tf.GradientTape() as tape:
-        #         logits_adv = model(x_adv)
-        #         logits_natural = model(x_natural)
-        #
-        #         loss_kl = criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
-        #                                tf.nn.softmax(logits_natural, axis=1))
-        #
-        #     gradients = tape.gradient(loss_kl, x_adv)
-        #     x_adv = x_adv + step_size * tf.sign(gradients)
-        #     x_adv = tf.clip_by_value(x_adv, x_natural - epsilon, x_natural + epsilon)
-        #     x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
+        elif distance == 'l_2':
+            delta = 0.001 * tf.random.normal(shape=tf.shape(x_natural))
+            delta = tf.Variable(delta, trainable=True)
 
-    elif distance == 'l_2':
-        delta = 0.001 * tf.random.normal(shape=tf.shape(x_natural))
-        delta = tf.Variable(delta, trainable=True)
+            optimizer_delta = tf.keras.optimizers.SGD(learning_rate=epsilon / (perturb_steps * 2))
 
-        optimizer_delta = tf.keras.optimizers.SGD(learning_rate=epsilon / (perturb_steps * 2))
+            for _ in range(perturb_steps):
+                adv = x_natural + delta
 
-        for _ in range(perturb_steps):
-            adv = x_natural + delta
+                with tf.GradientTape() as tape:
+                    logits_adv = model(adv)
+                    logits_natural = model(x_natural)
 
-            with tf.GradientTape() as tape:
-                logits_adv = model(adv)
-                logits_natural = model(x_natural)
+                    loss = (-1) * criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
+                                            tf.nn.softmax(logits_natural, axis=1))
 
-                loss = (-1) * criterion_kl(tf.nn.log_softmax(logits_adv, axis=1),
-                                           tf.nn.softmax(logits_natural, axis=1))
+                gradients = tape.gradient(loss, delta)
+                grad_norms = tf.norm(gradients, ord=2, axis=(1, 2, 3))
+                delta.assign(tf.math.divide_no_nan(gradients, tf.reshape(grad_norms, [-1, 1, 1, 1])))
 
-            gradients = tape.gradient(loss, delta)
-            grad_norms = tf.norm(gradients, ord=2, axis=(1, 2, 3))
-            delta.assign(tf.math.divide_no_nan(gradients, tf.reshape(grad_norms, [-1, 1, 1, 1])))
+                if tf.math.reduce_any(tf.math.equal(grad_norms, 0)):
+                    delta.assign(tf.random.normal(shape=tf.shape(delta)))
 
-            if tf.math.reduce_any(tf.math.equal(grad_norms, 0)):
-                delta.assign(tf.random.normal(shape=tf.shape(delta)))
+                optimizer_delta.apply_gradients([(gradients, delta)])
 
-            optimizer_delta.apply_gradients([(gradients, delta)])
+                # Projection
+                delta.assign_add(x_natural)
+                delta.assign(tf.clip_by_value(delta, 0, 1))
+                delta.assign(tf.clip_by_norm(delta - x_natural, epsilon, axes=[1, 2, 3]))
 
-            # Projection
-            delta.assign_add(x_natural)
-            delta.assign(tf.clip_by_value(delta, 0, 1))
-            delta.assign(tf.clip_by_norm(delta - x_natural, epsilon, axes=[1, 2, 3]))
+            x_adv = x_natural + delta
 
-        x_adv = x_natural + delta
+        else:
+            x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
 
-    else:
-        x_adv = tf.clip_by_value(x_adv, 0.0, 1.0)
-
-    model.trainable = True
+    # model.trainable = True
 
     # Calculate robust loss
     logits_natural = model(x_natural,training = training)
@@ -528,7 +531,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             # Train the model
             model = get_model(X_train.shape[1:], location, activation="relu")
             # Compile the model with the custom loss function
-            model.compile(optimizer=optimizer)
+            model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
             # model.summary()
             reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                       patience=5, min_lr=0.0001, verbose=1)
@@ -543,10 +546,11 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
                 for step in tqdm(range(0, len(X_train), batch_size)):
                     x_batch = X_train[step:step + batch_size]
                     y_batch = Y_train[step:step + batch_size]
-
+                    x_adv = create_adversarial_examples(model, x_batch, y_batch, epsilon = epsilon, attack='pgd', batch_size=batch_size, verbose = False)
                     with tf.GradientTape() as tape:
                         loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
-                        , x_batch, y_batch, beta, epsilon=epsilon, step_size = epsilon/10.0 * 3)
+                        # loss, _ , _ = trades_loss(model
+                        , x_batch, y_batch, beta, x_adv=x_adv)
                         # Calculate robust loss
                         # outs = model(x_batch, training=True)
                         # loss = tf.reduce_mean(tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)(y_batch, outs))
