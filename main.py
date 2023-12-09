@@ -36,7 +36,7 @@ if __name__ == "__main__":
     parser.add_argument("--type", type=str, choices=["train", "test"], help="Train or test")
     parser.add_argument("--base-dir", type=str, help="Base directory for models and results")
     parser.add_argument("--drelu-loc", type=str, choices=["end", "beginning", "all"], default="end", help="The location of layer that has D-ReLU")
-    parser.add_argument("--training-type", type=str, choices=["normal", "adv_traing", "trades"], default="normal", help="Type of training")
+    parser.add_argument("--training-type", type=str, choices=["normal", "adv_training", "trades"], default="normal", help="Type of training")
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
 
     args = parser.parse_args()
