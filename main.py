@@ -38,6 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--drelu-loc", type=str, choices=["end", "beginning", "all"], default="end", help="The location of layer that has D-ReLU")
     parser.add_argument("--training-type", type=str, choices=["normal", "adv_training", "trades"], default="normal", help="Type of training")
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
+    parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
 
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100, 10000]
@@ -50,7 +51,6 @@ if __name__ == "__main__":
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = np.expand_dims(x_train / 255.0, -1).astype(np.float32), np.expand_dims(x_test / 255.0, -1).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32), y_test.astype(np.int32)
-        beta = 1.0
     elif(args.dataset == "cifar10"):
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
         _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
@@ -58,7 +58,6 @@ if __name__ == "__main__":
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
-        beta = 6.0
 
     if(args.model == "dense"):
         model_fnc = create_dense_model
@@ -110,9 +109,9 @@ if __name__ == "__main__":
              x_train, y_train, args.eps, adv_epochs = args.adv_epochs,
              location = args.drelu_loc, batch_size=args.batch_size)
         elif(args.training_type == 'trades'):
-            folder += '/trades'
+            folder += f'/trades_beta={args.trades_beta}'
             trades_train_models(args.n_runs, max_index, folder, model_fnc,
-             x_train, y_train, args.eps, beta,
+             x_train, y_train, args.eps, args.trades_beta,
              location = args.drelu_loc, batch_size=args.batch_size)
         else:
             train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
