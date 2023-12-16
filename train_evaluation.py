@@ -336,6 +336,7 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         model = get_model(x_train.shape[1:], location = location, activation="relu")
         # Compile the model with the custom loss function
         model.compile(optimizer='adam', metrics=['accuracy'])
+        print()
         if(os.path.exists(path)):
             model.load_weights(path)
         else:

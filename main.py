@@ -129,8 +129,8 @@ if __name__ == "__main__":
                     x_test, y_test, args.eps, batch_size=args.batch_size,
                     location = args.drelu_loc, adv_epochs=args.adv_epochs)
         elif(args.training_type == 'trades'):
-            folder += '/trades'
-            result_folder += '/trades'
+            folder += f'/trades_beta={args.trades_beta}'
+            result_folder += f'/trades_beta={args.trades_beta}'
             results = adversarial_test(args.n_runs,
                     max_index, folder,
                     result_folder,
