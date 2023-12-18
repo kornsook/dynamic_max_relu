@@ -99,7 +99,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         diff_lst = np.sqrt(np.sum(np.square(x_data - new_dataset), axis = (3,2,1)))
 #         print(np.mean(diff_lst))
         for i in range(len(x_data)):
-            if(epsilon == 0.1 and diff_lst[i] > 18): #MNIST
+            if(epsilon == 0.1 and diff_lst[i] > 8): #MNIST
                 revised_new_dataset.append(x_data[i])
             elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10
                 revised_new_dataset.append(x_data[i])
