@@ -111,6 +111,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
     return output
 
 def plot_accuracy(results, path):
+    plt.figure()
     plt.rcParams.update({'font.size': 14})  # Change the 14 to your desired font size
     plt.plot(results['balancers'],np.mean(results['accuracy'], axis = 0))
     # plt.plot(results['balancers'],np.mean(results['random_accuracy'], axis = 0))
@@ -127,6 +128,7 @@ def plot_accuracy(results, path):
     plt.savefig(path, dpi=450, bbox_inches="tight")
     plt.show()
 def plot_perturbation(results, path):
+    plt.figure()
     plt.plot(results['balancers'],np.mean(results['cw_l2_perturbation'], axis = 0))
     plt.rcParams.update({'font.size': 14})  # Change the 14 to your desired font size
     plt.xscale('log')
@@ -136,6 +138,7 @@ def plot_perturbation(results, path):
     plt.savefig(path, dpi=450, bbox_inches="tight")
     plt.show()
 def plot_mean_max(results, path):
+    plt.figure()
     plt.plot(results['balancers'],np.mean(results['mean_max'], axis = 0))
     plt.rcParams.update({'font.size': 14})  # Change the 14 to your desired font size
     plt.xscale('log')
