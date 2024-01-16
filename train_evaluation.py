@@ -13,6 +13,8 @@ from autoattack.autoattack import AutoAttack
 from autoattack import utils_tf2
 import torch
 from sklearn.model_selection import train_test_split
+from utils import torch_model
+from BlackboxBench.attacks.decision.rays_attack import RaySAttack
 
 def custom_loss(model, alpha=0.01, index=4):
     def loss(y_true, y_pred):
@@ -85,7 +87,7 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
             adversary.attacks_to_run = ['apgd-dlr']
             x_adv, y_adv = adversary.run_standard_evaluation(torch_testX, torch_testY, bs=len(original_image)
                                                              , return_labels=True)
-            perturbed_image = np.moveaxis(x_adv.cpu().numpy(), 1, 3).tolist()
+            perturbed_image = np.moveaxis(x_adv.cpu().numpy(), 1, 3).tolist()        
         elif(attack == 'random'):
             perturbed_image = random_noise(model, tf.convert_to_tensor(original_image), epsilon)
         torch.cuda.empty_cache()
@@ -93,35 +95,57 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
     return tf.convert_to_tensor(new_dataset)
 
 def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size = 1, norm=np.inf):
-    new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
-    if(attack == 'cw_l2'):
-        revised_new_dataset = []
-        diff_lst = np.sqrt(np.sum(np.square(x_data - new_dataset), axis = (3,2,1)))
-#         print(np.mean(diff_lst))
-        for i in range(len(x_data)):
-            if(epsilon == 0.1 and diff_lst[i] > 12): #MNIST
-                revised_new_dataset.append(x_data[i])
-            elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10
-                revised_new_dataset.append(x_data[i])
-            else:
-                revised_new_dataset.append(new_dataset[i])
-        new_dataset = tf.convert_to_tensor(revised_new_dataset)
-#     else:
-    _, output = model.evaluate(new_dataset, y_data)
+    if(attack in ['rays', 'hsja']): # Black box attack
+        if(attack == 'rays'):
+            attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
+        else:
+            attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, gamma = 1.0, stepsize_search = "geometric_progression"
+            , max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
+        pred = model.predict(x_data).argmax(axis = 1)
+        correct_pred = x_data[np.where(pred == y_data)]
+        y_correct_pred = y_data[np.where(pred == y_data)]
+        for i in range(0, len(correct_pred), batch_size):
+            x_batch = correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
+            y_batch = y_correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
+            attacker.batch_size = len(x_batch)
+            log = attacker.run(x_batch, y_batch, torch_model(model), False, None)
+        output = attacker.result()["total_failures"] / len(x_data)
+    else: # Whitebox attack
+        new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
+        if(attack == 'cw_l2'):
+            revised_new_dataset = []
+            diff_lst = np.sqrt(np.sum(np.square(x_data - new_dataset), axis = (3,2,1)))
+    #         print(np.mean(diff_lst))
+            for i in range(len(x_data)):
+                if(epsilon == 0.1 and diff_lst[i] > 12): #MNIST
+                    revised_new_dataset.append(x_data[i])
+                elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10
+                    revised_new_dataset.append(x_data[i])
+                else:
+                    revised_new_dataset.append(new_dataset[i])
+            new_dataset = tf.convert_to_tensor(revised_new_dataset)
+    #     else:
+        _, output = model.evaluate(new_dataset, y_data)
     return output
 
-def plot_accuracy(results, path):
+def plot_accuracy(results, path, attack_type):
     plt.figure()
     plt.rcParams.update({'font.size': 14})  # Change the 14 to your desired font size
     plt.plot(results['balancers'],np.mean(results['accuracy'], axis = 0))
     # plt.plot(results['balancers'],np.mean(results['random_accuracy'], axis = 0))
-    plt.plot(results['balancers'],np.mean(results['fgsm_accuracy'], axis = 0))
-    plt.plot(results['balancers'],np.mean(results['pgd_accuracy'], axis = 0))
-    plt.plot(results['balancers'],np.mean(results['apgd_ce_accuracy'], axis = 0))
-    plt.plot(results['balancers'],np.mean(results['apgd_dlr_accuracy'], axis = 0))
-    plt.plot(results['balancers'],np.mean(results['cw_l2_accuracy'], axis = 0))
-    plt.setp(plt.gca().lines, linewidth=2)
-    plt.legend(['Clean', 'FGSM', 'PGD', 'APGD_CE', 'APGD_DLR','CW_L2'])
+    if(attack_type == "whitebox"):
+        plt.plot(results['balancers'],np.mean(results['fgsm_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['pgd_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['apgd_ce_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['apgd_dlr_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['cw_l2_accuracy'], axis = 0))
+        plt.setp(plt.gca().lines, linewidth=2)
+        plt.legend(['Clean', 'FGSM', 'PGD', 'APGD_CE', 'APGD_DLR','CW_L2'])
+    else:
+        plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['hsja_accuracy'], axis = 0))
+        plt.setp(plt.gca().lines, linewidth=2)
+        plt.legend(['Clean', 'RayS', 'HSJA'])
     plt.xscale('log')
     plt.xlabel('Balancer')
     plt.ylabel('Accuracy')
@@ -173,24 +197,33 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
 #                 print("Already Exists!")
 
 def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
-               , epsilon, batch_size=1, stored_results=None, location="end"):
-    info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
-                 , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
-                 ,'cw_l2_accuracy','mean_max']
-    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
-                   'apgd_ce_accuracy', 'apgd_dlr_accuracy',
-                   'cw_l2_accuracy']
-    acc2attack = {
-        'random_accuracy': 'random',
-        'fgsm_accuracy': 'fgsm',
-        'pgd_accuracy': 'pgd',
-        'apgd_ce_accuracy': 'apgd_ce',
-        'apgd_dlr_accuracy': 'apgd_dlr',
-        'cw_l2_accuracy': 'cw_l2'
-    }
-    result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
+               , epsilon, batch_size=1, stored_results=None, location="end", attack_type = "whitebox"):
+    if(attack_type == "whitebox"):
+        info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
+                    , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
+                    ,'cw_l2_accuracy','mean_max']
+        acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
+                    'apgd_ce_accuracy', 'apgd_dlr_accuracy',
+                    'cw_l2_accuracy']
+        acc2attack = {
+            'random_accuracy': 'random',
+            'fgsm_accuracy': 'fgsm',
+            'pgd_accuracy': 'pgd',
+            'apgd_ce_accuracy': 'apgd_ce',
+            'apgd_dlr_accuracy': 'apgd_dlr',
+            'cw_l2_accuracy': 'cw_l2'
+        }
+        result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}/blackbox'
+    else:
+        info_list = ['accuracy', 'random_accuracy', 'rays_accuracy', 'hsja_accuracy'
+                    , 'mean_max']
+        acc_attacks = ['random_accuracy', 'rays_accuracy', 'hsja_accuracy']
+        acc2attack = {
+            'random_accuracy': 'random',
+            'rays_accuracy': 'fgsm',
+            'hsja_accuracy': 'pgd',
+        }
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
-
     results = {}
     if(os.path.exists(accuracy_score_path)):
         f = open(accuracy_score_path, "rb")
@@ -248,8 +281,8 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
                 results[info].append(tmp_results[info])
     with open(accuracy_score_path, "wb") as outfile:
         pickle.dump(results, outfile)
-    plot_accuracy(results, result_folder + '/accuracy_plot.png')
-#     plot_perturbation(results, result_folder + '/perturbation_plot.png')
+    plot_accuracy(results, result_folder + '/accuracy_plot.png', attack_type)
+    # plot_perturbation(results, result_folder + '/perturbation_plot.png')
     plot_mean_max(results, result_folder + '/mean_max_plot.png')
     for key, item in results.items():
         if(key != "balancers"):

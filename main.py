@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--training-type", type=str, choices=["normal", "adv_training", "trades"], default="normal", help="Type of training")
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
     parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
+    parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
 
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100, 10000]
@@ -144,5 +145,6 @@ if __name__ == "__main__":
                         result_folder,
                         model_fnc,
                         x_train, y_train,
-                        x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc)
+                        x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc,
+                        attack_type = args.attack_type)
     print("Done!")
