@@ -15,6 +15,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from utils import torch_model
 from BlackboxBench.attacks.decision.rays_attack import RaySAttack
+from BlackboxBench.attacks.decision.hsja_attack import HSJAttack
 
 def custom_loss(model, alpha=0.01, index=4):
     def loss(y_true, y_pred):
