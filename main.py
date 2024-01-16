@@ -20,7 +20,7 @@ from train_evaluation import train_models,test, adversarial_train_models, advers
 import argparse
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
-
+print(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
