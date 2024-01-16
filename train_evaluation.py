@@ -99,12 +99,11 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         if(attack == 'rays'):
             attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
         else:
-            attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, gamma = 1.0, stepsize_search = "geometric_progression"
-            , max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
+            attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, gamma = 1.0, stepsize_search = "geometric_progression", max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
         pred = model.predict(x_data).argmax(axis = 1)
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
-        for i in range(0, len(correct_pred), batch_size):
+        for i in tqdm(range(0, len(correct_pred), batch_size)):
             x_batch = correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
             y_batch = y_correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
             attacker.batch_size = len(x_batch)
