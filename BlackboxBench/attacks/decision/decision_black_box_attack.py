@@ -146,6 +146,7 @@ class DecisionBlackBoxAttack(object):
                 return self.logs
         else:
             check = self.is_adversarial(xs_t, ys_t)
+            print(check)
             if torch.any(check):
                 print('Some original images do not belong to the original class!')
                 return self.logs
