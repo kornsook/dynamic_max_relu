@@ -99,7 +99,7 @@ class RaySAttack(DecisionBlackBoxAttack):
                 block_level += 1
                 block_ind = 0
 
-            dist = torch.norm((self.x_final - x).view(shape[0], -1), np.inf, 1)
+            dist = torch.norm((self.x_final - x).reshape(shape[0], -1), np.inf, 1)
             stop_queries[working_ind] = self.queries[working_ind]
             working_ind = (dist > self.epsilon).nonzero().flatten()
             if working_ind.size(0) == 0:
