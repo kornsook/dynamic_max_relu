@@ -263,6 +263,7 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
             tmp_results['accuracy'].append(test_accuracy)
             for acc_attack in acc_attacks:
                 if(len(results[acc_attack]) <= run):
+                    print(acc_attack)
                     tmp_results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
                 else:
                     tmp_results[acc_attack].append(results[acc_attack][run])
