@@ -1,9 +1,11 @@
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
+
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist, cifar10
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
-import os, sys
 from pathlib import Path
 from cleverhans.tf2.attacks import fast_gradient_method, madry_et_al
 from cw_attacks import l2_attack
@@ -19,10 +21,6 @@ from models import create_dense_model, create_shallow_cnn_model, create_vgg16_mo
 from train_evaluation import train_models,test, adversarial_train_models, adversarial_test, trades_train_models
 import argparse
 
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
-print("PATH")
-print(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
-print("PATH")
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
