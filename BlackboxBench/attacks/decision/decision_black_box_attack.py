@@ -105,9 +105,6 @@ class DecisionBlackBoxAttack(object):
         if self.targeted:
             return self.predict_label(x) == y
         else:
-            print(self.predict_label(x))
-            print(y)
-            print(self.predict_label(x) != y)
             return self.predict_label(x) != y
 
     def predict_label(self, xs):
