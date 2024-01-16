@@ -199,7 +199,6 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
 def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
                , epsilon, batch_size=1, stored_results=None, location="end", attack_type = "whitebox"):
     if(attack_type == "whitebox"):
-        print("dWWWW")
         info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                     , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
                     ,'cw_l2_accuracy','mean_max']
@@ -216,7 +215,6 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        print("DDDDD")
         info_list = ['accuracy', 'random_accuracy', 'rays_accuracy', 'hsja_accuracy'
                     , 'mean_max']
         acc_attacks = ['random_accuracy', 'rays_accuracy', 'hsja_accuracy']
