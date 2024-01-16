@@ -6,5 +6,5 @@ def torch_model(tf_model):
         torch_inp = torch_inp.permute(0,2,3,1)
         np_inp = torch_inp.numpy()
         tf_inp = tf.convert_to_tensor(np_inp)
-        return torch.FloatTensor(tf_model.predict(tf_inp).numpy())
+        return torch.FloatTensor(tf_model.predict(tf_inp))
     return get_output
