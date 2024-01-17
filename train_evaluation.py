@@ -112,8 +112,8 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         y_correct_pred = y_data[np.where(pred == y_data)]
         pt_model = torch_model(model)
         for i in tqdm(range(0, len(correct_pred), batch_size)):
-            x_batch = correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
-            y_batch = torch.Tensor(y_correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)])
+            x_batch = correct_pred[i: min(len(correct_pred), i + batch_size)]
+            y_batch = torch.Tensor(y_correct_pred[i: min(len(correct_pred), i + batch_size)])
             attacker.batch_size = len(x_batch)
             print(x_batch.shape)
             print(attacker.batch_size)
