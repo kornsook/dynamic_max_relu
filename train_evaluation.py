@@ -286,7 +286,7 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
 #                 if(acc_attack == 'cw_l2_perturbation'):
 #                     print(f"{acc2attack[acc_attack]} perturbation: {tmp_results[acc_attack][-1]}")
 #                 else:
-#                 print(f"{acc2attack[acc_attack]} acc: {tmp_results[acc_attack][-1]}")
+                print(f"{acc2attack[acc_attack]} acc: {tmp_results[acc_attack][-1]}")
             if(len(results['mean_max']) <= run):
                 tmp_results['mean_max'].append(np.mean(model.layers[max_index].max_values))
             else:
