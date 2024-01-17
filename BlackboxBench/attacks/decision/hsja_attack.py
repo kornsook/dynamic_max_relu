@@ -38,7 +38,7 @@ class HSJAttack(DecisionBlackBoxAttack):
     """
     HSJA
     """
-    def __init__(self, epsilon, p, max_queries, gamma, stepsize_search, max_num_evals, init_num_evals, EOT, sigma, lb, ub, batch_size):
+    def __init__(self, epsilon, p, max_queries, gamma, stepsize_search, max_num_evals, init_num_evals, EOT, sigma, lb, ub, batch_size, verbose = False):
         super().__init__(max_queries = max_queries,
                          epsilon=epsilon,
                          p=p,
@@ -49,7 +49,7 @@ class HSJAttack(DecisionBlackBoxAttack):
         self.stepsize_search = stepsize_search
         self.max_num_evals = max_num_evals
         self.init_num_evals = init_num_evals
-        self.verbose = True
+        self.verbose = verbose
         self.EOT = EOT
         self.sigma = sigma
 

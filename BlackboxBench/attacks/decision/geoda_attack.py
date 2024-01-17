@@ -94,7 +94,7 @@ class GeoDAttack(DecisionBlackBoxAttack):
     """
     GeoDA
     """
-    def __init__(self, epsilon, p, max_queries, sub_dim, tol, alpha, mu, search_space, grad_estimator_batch_size, lb, ub, batch_size, sigma):
+    def __init__(self, epsilon, p, max_queries, sub_dim, tol, alpha, mu, search_space, grad_estimator_batch_size, lb, ub, batch_size, sigma, verbose = False):
         super().__init__(max_queries = max_queries,
                          epsilon=epsilon,
                          p=p,
@@ -108,6 +108,7 @@ class GeoDAttack(DecisionBlackBoxAttack):
         self.search_space = search_space
         self.grad_estimator_batch_size = grad_estimator_batch_size
         self.sigma = sigma
+        self.verbose = verbose
 
     def _config(self):
         return {
@@ -186,7 +187,8 @@ class GeoDAttack(DecisionBlackBoxAttack):
             num_calls += 1
             
             if num_calls > 100:
-                print('falied ... ')
+                if(self.verbose):
+                    print('falied ... ')
                 break
         return perturbed, num_calls
 
@@ -266,7 +268,8 @@ class GeoDAttack(DecisionBlackBoxAttack):
             
             norm = self.distance(x_adv, x_0)
             message = ' (took {:.5f} seconds)'.format(t2 - t1)
-            print('iteration -> ' + str(i) + str(message) + '     -- ' + self.p + ' norm is -> ' + str(norm))
+            if(self.verbose):
+                print('iteration -> ' + str(i) + str(message) + '     -- ' + self.p + ' norm is -> ' + str(norm))
             if norm < self.epsilon:
                 break
             if q_num > self.max_queries:
@@ -280,16 +283,20 @@ class GeoDAttack(DecisionBlackBoxAttack):
     def _perturb(self, xs_t, ys):
 
         if self.search_space == 'sub':
-            print('Check if DCT basis available ...')
+            if(self.verbose):
+                print('Check if DCT basis available ...')
             
             path = os.path.join(os.path.dirname(__file__), '2d_dct_basis_{}_{}.npy'.format(self.sub_dim,xs_t.size(2)))
             if os.path.exists(path):
-                print('Yes, we already have it ...')
+                if(self.verbose):
+                    print('Yes, we already have it ...')
                 sub_basis = np.load(path).astype(np.float32)
             else:
-                print('Generating dct basis ......')
+                if(self.verbose):
+                    print('Generating dct basis ......')
                 sub_basis = generate_2d_dct_basis(self.sub_dim, xs_t.size(2), path).astype(np.float32)
-                print('Done!\n')
+                if(self.verbose):
+                    print('Done!\n')
 
 
             sub_basis_torch = torch.from_numpy(sub_basis).cuda()
@@ -311,7 +318,8 @@ class GeoDAttack(DecisionBlackBoxAttack):
         q_opt_iter, iterate = self.opt_query_iteration(q_opt_it, iteration, self.mu)
         q_opt_it = int(self.max_queries  - (iterate)*25)
         q_opt_iter, iterate = self.opt_query_iteration(q_opt_it, iteration, self.mu)
-        print('Start: The GeoDA will be run for:' + ' Iterations = ' + str(iterate) + ', Query = ' + str(self.max_queries) + ', Norm = ' + str(self.p)+ ', Space = ' + str(self.search_space) )
+        if(self.verbose):
+            print('Start: The GeoDA will be run for:' + ' Iterations = ' + str(iterate) + ', Query = ' + str(self.max_queries) + ', Norm = ' + str(self.p)+ ', Space = ' + str(self.search_space) )
 
 
         t3 = time.time()
@@ -320,8 +328,8 @@ class GeoDAttack(DecisionBlackBoxAttack):
         message = ' took {:.5f} seconds'.format(t4 - t3)
         qmessage = ' with query = ' + str(query_o + query_rnd)
 
-
-        print('End: The GeoDA algorithm' + message + qmessage )
+        if(self.verbose):
+            print('End: The GeoDA algorithm' + message + qmessage )
 
             
         return adv, query_o + query_rnd

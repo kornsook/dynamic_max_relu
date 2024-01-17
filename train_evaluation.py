@@ -102,8 +102,10 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         if(attack == 'rays'):
             attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
         elif(attack == 'hsja'):
+            batch_size = 1
             attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, gamma = 1.0, stepsize_search = "geometric_progression", max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
         elif(attack == 'geoda'):
+            batch_size = 1
             attacker = GeoDAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, sub_dim = 10, tol = 0.0001, alpha = 0.0002, mu = 0.6, search_space = "sub", grad_estimator_batch_size = 40, lb =0, ub = 1, batch_size = batch_size, sigma = 0)
         else:
             attacker = SignFlipAttack(epsilon = epsilon, p = 'inf', resize_factor = 1.0, max_queries= 10000, lb = 0, ub = 1, batch_size = batch_size)
@@ -151,12 +153,12 @@ def plot_accuracy(results, path, attack_type):
         plt.setp(plt.gca().lines, linewidth=2)
         plt.legend(['Clean', 'FGSM', 'PGD', 'APGD_CE', 'APGD_DLR','CW_L2'])
     else:
-        plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
+        # plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
         plt.plot(results['balancers'],np.mean(results['hsja_accuracy'], axis = 0))
         plt.plot(results['balancers'],np.mean(results['geoda_accuracy'], axis = 0))
-        plt.plot(results['balancers'],np.mean(results['signflip_accuracy'], axis = 0))
+        # plt.plot(results['balancers'],np.mean(results['signflip_accuracy'], axis = 0))
         plt.setp(plt.gca().lines, linewidth=2)
-        plt.legend(['Clean', 'RayS', 'HSJA', 'GeoDA', 'SignFlip'])
+        plt.legend(['Clean', 'HSJA', 'GeoDA'])
     plt.xscale('log')
     plt.xlabel('Balancer')
     plt.ylabel('Accuracy')
@@ -226,9 +228,9 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'rays_accuracy', 'hsja_accuracy', 'geoda_accuracy'
-                    , 'signflip_accuracy','mean_max']
-        acc_attacks = ['random_accuracy', 'rays_accuracy', 'hsja_accuracy', 'geoda_accuracy', 'signflip_accuracy']
+        info_list = ['accuracy', 'random_accuracy', 'hsja_accuracy', 'geoda_accuracy'
+                    ,'mean_max']
+        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'geoda_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
