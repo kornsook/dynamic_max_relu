@@ -110,11 +110,14 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         pred = model.predict(x_data).argmax(axis = 1)
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
+        pt_model = torch_model(model)
         for i in tqdm(range(0, len(correct_pred), batch_size)):
             x_batch = correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)]
             y_batch = torch.Tensor(y_correct_pred[i * batch_size: min(len(correct_pred), (i+1)* batch_size)])
             attacker.batch_size = len(x_batch)
-            log = attacker.run(x_batch, y_batch, torch_model(model), False, None)
+            print(x_batch.shape)
+            print(attacker.batch_size)
+            # log = attacker.run(x_batch, y_batch, pt_model, False, None)
         output = attacker.result()["total_failures"] / len(x_data)
     else: # Whitebox attack
         new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
