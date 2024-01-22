@@ -103,10 +103,10 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
             attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
         elif(attack == 'hsja'):
             batch_size = 1
-            attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, gamma = 1.0, stepsize_search = "geometric_progression", max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
+            attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 3000, gamma = 1.0, stepsize_search = "geometric_progression", max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
         elif(attack == 'geoda'):
             batch_size = 1
-            attacker = GeoDAttack(epsilon = epsilon, p = 'inf', max_queries = 10000, sub_dim = 10, tol = 0.0001, alpha = 0.0002, mu = 0.6, search_space = "sub", grad_estimator_batch_size = 40, lb =0, ub = 1, batch_size = batch_size, sigma = 0)
+            attacker = GeoDAttack(epsilon = epsilon, p = 'inf', max_queries = 3000, sub_dim = 10, tol = 0.0001, alpha = 0.0002, mu = 0.6, search_space = "sub", grad_estimator_batch_size = 40, lb =0, ub = 1, batch_size = batch_size, sigma = 0)
         else:
             attacker = SignFlipAttack(epsilon = epsilon, p = 'inf', resize_factor = 1.0, max_queries= 10000, lb = 0, ub = 1, batch_size = batch_size)
         pred = model.predict(x_data).argmax(axis = 1)
