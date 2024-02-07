@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
 
     args = parser.parse_args()
-    balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100, 10000]
+    balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
     result_folder = f'{args.base_dir}/results/{args.drelu_loc}/{args.model}_{args.dataset}'
     if(args.dataset == "mnist"):
@@ -130,7 +130,8 @@ if __name__ == "__main__":
                     model_fnc,
                     x_train, y_train,
                     x_test, y_test, args.eps, batch_size=args.batch_size,
-                    location = args.drelu_loc, adv_epochs=args.adv_epochs)
+                    location = args.drelu_loc, adv_epochs=args.adv_epochs,
+                    attack_type = args.attack_type)
         elif(args.training_type == 'trades'):
             folder += f'/trades_beta={args.trades_beta}'
             result_folder += f'/trades_beta={args.trades_beta}'
@@ -140,7 +141,8 @@ if __name__ == "__main__":
                     model_fnc,
                     x_train, y_train,
                     x_test, y_test, args.eps, batch_size=args.batch_size,
-                    location = args.drelu_loc, adv_epochs=args.adv_epochs)
+                    location = args.drelu_loc, adv_epochs=args.adv_epochs,
+                    attack_type = args.attack_type)
         else:
             results = test(balancers, args.n_runs,
                         max_index, folder,

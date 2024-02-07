@@ -109,7 +109,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
             attacker = GeoDAttack(epsilon = epsilon, p = 'inf', max_queries = 3000, sub_dim = 10, tol = 0.0001, alpha = 0.0002, mu = 0.6, search_space = "sub", grad_estimator_batch_size = 40, lb =0, ub = 1, batch_size = batch_size, sigma = 0)
         else:
             attacker = SignFlipAttack(epsilon = epsilon, p = 'inf', resize_factor = 1.0, max_queries= 10000, lb = 0, ub = 1, batch_size = batch_size)
-        pred = model.predict(x_data).argmax(axis = 1)
+        pred = model.predict(x_data, verbose=0).argmax(axis = 1)
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
         pt_model = torch_model(model)
@@ -351,22 +351,35 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
             model.save_weights(path)
 
 def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
-               , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5):
-    info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
-                 , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
-                 ,'cw_l2_accuracy']
-    acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
-                   'apgd_ce_accuracy', 'apgd_dlr_accuracy',
-                   'cw_l2_accuracy']
-    acc2attack = {
-        'random_accuracy': 'random',
-        'fgsm_accuracy': 'fgsm',
-        'pgd_accuracy': 'pgd',
-        'apgd_ce_accuracy': 'apgd_ce',
-        'apgd_dlr_accuracy': 'apgd_dlr',
-        'cw_l2_accuracy': 'cw_l2'
-    }
-    result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
+               , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5, attack_type="whitebox"):
+    if(attack_type == "whitebox"):
+        info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
+                    , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
+                    ,'cw_l2_accuracy','mean_max']
+        acc_attacks = ['random_accuracy', 'fgsm_accuracy', 'pgd_accuracy',
+                    'apgd_ce_accuracy', 'apgd_dlr_accuracy',
+                    'cw_l2_accuracy']
+        acc2attack = {
+            'random_accuracy': 'random',
+            'fgsm_accuracy': 'fgsm',
+            'pgd_accuracy': 'pgd',
+            'apgd_ce_accuracy': 'apgd_ce',
+            'apgd_dlr_accuracy': 'apgd_dlr',
+            'cw_l2_accuracy': 'cw_l2'
+        }
+        result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
+    else:
+        info_list = ['accuracy', 'random_accuracy', 'hsja_accuracy', 'geoda_accuracy'
+                    ,'mean_max']
+        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'geoda_accuracy']
+        acc2attack = {
+            'random_accuracy': 'random',
+            'rays_accuracy': 'rays',
+            'hsja_accuracy': 'hsja',
+            'geoda_accuracy': 'geoda',
+            'signflip_accuracy': 'signflip'
+        }
+        result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}/blackbox'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
 
     results = {}
