@@ -228,9 +228,9 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'hsja_accuracy', 'geoda_accuracy'
+        info_list = ['accuracy', 'random_accuracy', 'geoda_accuracy', 'hsja_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'geoda_accuracy']
+        acc_attacks = ['random_accuracy', 'geoda_accuracy', 'hsja_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
