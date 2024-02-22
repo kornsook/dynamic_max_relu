@@ -84,8 +84,8 @@ class SubNoise(torch.nn.Module):
 
     def forward(self):
         r = torch.zeros([self.size ** 2, 3*self.num_noises], dtype=torch.float32)
-        noise = torch.randn([self.x.shape[1], 3*self.num_noises], dtype=torch.float32).cuda()
-        # noise = torch.randn([self.x.shape[1], 3*self.num_noises], dtype=torch.float32)
+        # noise = torch.randn([self.x.shape[1], 3*self.num_noises], dtype=torch.float32).cuda()
+        noise = torch.randn([self.x.shape[1], 3*self.num_noises], dtype=torch.float32)
         sub_noise = torch.transpose(torch.mm(self.x, noise), 0, 1)
         r = sub_noise.view([self.num_noises, 3, self.size, self.size])
         r_list = r.permute(0,2,3,1)
@@ -300,8 +300,8 @@ class GeoDAttack(DecisionBlackBoxAttack):
                     print('Done!\n')
 
 
-            sub_basis_torch = torch.from_numpy(sub_basis).cuda()
-            # sub_basis_torch = torch.from_numpy(sub_basis)
+            # sub_basis_torch = torch.from_numpy(sub_basis).cuda()
+            sub_basis_torch = torch.from_numpy(sub_basis)
 
 
         x_random, query_random_1 = self.find_random_adversarial(xs_t, ys, epsilon=100)     
