@@ -2,7 +2,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "BlackboxBench"))
 
 import tensorflow as tf
-from tensorflow.keras.datasets import mnist, cifar10
+from tensorflow.keras.datasets import mnist, cifar10, cifar100
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
@@ -17,7 +17,7 @@ from autoattack import utils_tf2
 import torch
 from sklearn.model_selection import train_test_split
 from MaxReLU import MaxReLU
-from models import create_dense_model, create_shallow_cnn_model, create_vgg16_model, create_resnet50_model, create_resnet101_model, create_mobilenetv2_model, create_inceptionv3_model
+from models import all_models
 from train_evaluation import train_models,test, adversarial_train_models, adversarial_test, trades_train_models
 import argparse
 
@@ -47,6 +47,7 @@ if __name__ == "__main__":
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
     result_folder = f'{args.base_dir}/results/{args.drelu_loc}/{args.model}_{args.dataset}'
+    n_classes = 10
     if(args.dataset == "mnist"):
         # Load and preprocess the MNIST dataset
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -61,45 +62,53 @@ if __name__ == "__main__":
         # Normalize pixel values to be between 0 and 1
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+    elif(args.dataset == "cifar100"):
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+        _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
 
+        # Normalize pixel values to be between 0 and 1
+        x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
+        y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+        n_classes = 100
+    create_model = all_models(n_classes)
     if(args.model == "dense"):
-        model_fnc = create_dense_model
+        model_fnc = create_model.create_dense_model
         if(args.drelu_loc == "end"):
             max_index = 4
         elif(args.drelu_loc == "beginning"):
             max_index = 2
     elif(args.model == "shallow_cnn"):
-        model_fnc = create_shallow_cnn_model
+        model_fnc = create_model.create_shallow_cnn_model
         if(args.drelu_loc == "end"):
             max_index = 5
         elif(args.drelu_loc == "beginning"):
             max_index = 1
     elif(args.model == "vgg16"):
-        model_fnc = create_vgg16_model
+        model_fnc = create_model.create_vgg16_model
         if(args.drelu_loc == "end"):
             max_index = 3
         elif(args.drelu_loc == "beginning"):
             max_index = 1
     elif(args.model == "resnet50"):
-        model_fnc = create_resnet50_model
+        model_fnc = create_model.create_resnet50_model
         if(args.drelu_loc == "end"):
             max_index = 3
         elif(args.drelu_loc == "beginning"):
             max_index = 1
     elif(args.model == "resnet101"):
-        model_fnc = create_resnet101_model
+        model_fnc = create_model.create_resnet101_model
         if(args.drelu_loc == "end"):
             max_index = 3
         elif(args.drelu_loc == "beginning"):
             max_index = 1
     elif(args.model == "mobilenetv2"):
-        model_fnc = create_mobilenetv2_model
+        model_fnc = create_model.create_mobilenetv2_model
         if(args.drelu_loc == "end"):
             max_index = 3
         elif(args.drelu_loc == "beginning"):
             max_index = 1
     elif(args.model == "inceptionv3"):
-        model_fnc = create_inceptionv3_model
+        model_fnc = create_model.create_inceptionv3_model
         if(args.drelu_loc == "end"):
             max_index = 4
         elif(args.drelu_loc == "beginning"):
