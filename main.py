@@ -63,7 +63,7 @@ if __name__ == "__main__":
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
     elif(args.dataset == "cifar100"):
-        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+        (x_train, y_train), (x_test, y_test) = cifar100.load_data()
         _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
 
         # Normalize pixel values to be between 0 and 1
