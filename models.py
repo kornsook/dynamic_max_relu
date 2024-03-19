@@ -3,17 +3,18 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, ReLU, Dropout
 from MaxReLU import MaxReLU, MaxReLUConv2D
 class all_models:
-    def __init__(self, n_classes = 10):
+    def __init__(self, n_classes = 10, max_value = 100):
         self.n_classes = n_classes
+        self.max_value = max_value
     def create_dense_model(self, input_shape, location="end", init_max_val = 100, activation = "mrelu"):
         flatten_size = input_shape[0] * input_shape[1] * input_shape[2]
         if(activation == "mrelu"):
             model = tf.keras.Sequential([
             Flatten(input_shape=input_shape),
             tf.keras.layers.Dense(flatten_size // 2),
-            MaxReLU(flatten_size // 2, init_max_val=init_max_val),  # First hidden layer with learnable max values
+            MaxReLU(flatten_size // 2, init_max_val=self.max_value),  # First hidden layer with learnable max values
             tf.keras.layers.Dense(flatten_size // 4),
-            MaxReLU(flatten_size // 4, init_max_val=init_max_val),  # Second hidden layer with learnable max values
+            MaxReLU(flatten_size // 4, init_max_val=self.max_value),  # Second hidden layer with learnable max values
             tf.keras.layers.Dense(10),  # Output layer for multi-label classification
             tf.keras.layers.Activation('softmax')
             ])
@@ -34,7 +35,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_shape))
@@ -44,7 +45,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
@@ -56,7 +57,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         backbone = tf.keras.applications.vgg16.VGG16(
@@ -71,7 +72,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
@@ -83,7 +84,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         backbone = tf.keras.applications.resnet.ResNet50(
@@ -98,7 +99,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
@@ -111,7 +112,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         backbone = tf.keras.applications.resnet.ResNet101(
@@ -126,7 +127,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
@@ -138,7 +139,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         backbone = tf.keras.applications.mobilenet_v2.MobileNetV2(
@@ -153,7 +154,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
@@ -165,7 +166,7 @@ class all_models:
         if(location == "beginning"):
             model.add(Conv2D(filters=input_shape[2], kernel_size=(3, 3), input_shape = input_shape, padding="same"))
             if(activation == "mrelu"):
-                model.add(MaxReLU(input_shape[2], init_max_val=init_max_val))
+                model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Input(shape=input_shape))
@@ -182,7 +183,7 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
-                model.add(MaxReLU(256, init_max_val=init_max_val))
+                model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))

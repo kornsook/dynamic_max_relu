@@ -42,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
     parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
-
+    parser.add_argument("--init-max", type=int, default=100, help="Initial max value")
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
         n_classes = 100
-    create_model = all_models(n_classes)
+    create_model = all_models(n_classes, args.init_max)
     if(args.model == "dense"):
         model_fnc = create_model.create_dense_model
         if(args.drelu_loc == "end"):
