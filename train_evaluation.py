@@ -130,7 +130,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
             for i in range(len(x_data)):
                 if(epsilon == 0.1 and diff_lst[i] > 12): #MNIST
                     revised_new_dataset.append(x_data[i])
-                elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10
+                elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10, CIFAR100
                     revised_new_dataset.append(x_data[i])
                 else:
                     revised_new_dataset.append(new_dataset[i])
@@ -298,12 +298,12 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
                 results[info].append(tmp_results[info])
     with open(accuracy_score_path, "wb") as outfile:
         pickle.dump(results, outfile)
-    plot_accuracy(results, result_folder + '/accuracy_plot.png', attack_type)
-    # plot_perturbation(results, result_folder + '/perturbation_plot.png')
-    plot_mean_max(results, result_folder + '/mean_max_plot.png')
     for key, item in results.items():
         if(key != "balancers"):
             print(f"{key}: {np.mean(item, axis=0)}")
+    plot_accuracy(results, result_folder + '/accuracy_plot.png', attack_type)
+    # plot_perturbation(results, result_folder + '/perturbation_plot.png')
+    plot_mean_max(results, result_folder + '/mean_max_plot.png')
     return results
 
 def adversarial_training(model, X, y, X_val, y_val, epochs, batch_size, attack, eps):
