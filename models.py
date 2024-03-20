@@ -3,7 +3,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, ReLU, Dropout
 from MaxReLU import MaxReLU, MaxReLUConv2D
 class all_models:
-    def __init__(self, n_classes = 10, max_value = 100):
+    def __init__(self, n_classes, max_value):
         self.n_classes = n_classes
         self.max_value = max_value
     def create_dense_model(self, input_shape, location="end", init_max_val = 100, activation = "mrelu"):
