@@ -15,7 +15,7 @@ class all_models:
             MaxReLU(flatten_size // 2, init_max_val=self.max_value),  # First hidden layer with learnable max values
             tf.keras.layers.Dense(flatten_size // 4),
             MaxReLU(flatten_size // 4, init_max_val=self.max_value),  # Second hidden layer with learnable max values
-            tf.keras.layers.Dense(10),  # Output layer for multi-label classification
+            tf.keras.layers.Dense(self.n_classes),  # Output layer for multi-label classification
             tf.keras.layers.Activation('softmax')
             ])
         elif(activation == "relu"):
