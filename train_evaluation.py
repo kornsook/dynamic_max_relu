@@ -22,8 +22,8 @@ from BlackboxBench.attacks.decision.sign_flip_attack import SignFlipAttack
 def custom_loss(model, alpha=0.01, index=4):
     def loss(y_true, y_pred):
         ce_loss = tf.keras.losses.SparseCategoricalCrossentropy()(y_true, y_pred)
-        # max_loss = alpha * tf.reduce_sum(tf.square(model.layers[index].max_values))  # Penalty on max values
-        return ce_loss #+ max_loss
+        max_loss = alpha * tf.reduce_sum(tf.square(model.layers[index].max_values))  # Penalty on max values
+        return ce_loss + max_loss
     return loss
 
 def random_noise(model, image, epsilon=0.1):
