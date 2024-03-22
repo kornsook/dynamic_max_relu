@@ -83,9 +83,9 @@ if __name__ == "__main__":
     #     _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
 
         # Normalize pixel values to be between 0 and 1
-        x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
-        y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
-        n_classes = 200
+        # x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
+        # y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+        # n_classes = 200
         
     create_model = all_models(n_classes, args.init_max)
     if(args.model == "dense"):
