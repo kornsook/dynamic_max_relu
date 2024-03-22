@@ -4,7 +4,6 @@ class MaxReLU(tf.keras.layers.Layer):
     def __init__(self, units, init_max_val = 100, **kwargs):
         super(MaxReLU, self).__init__(**kwargs)
         self.units = units
-        print(init_max_val)
         self.max_values = self.add_weight(name='max_values', shape=(self.units,), initializer=tf.keras.initializers.Constant(init_max_val), trainable=True)
     def get_config(self):
         config = super().get_config()
@@ -18,6 +17,7 @@ class MaxReLU(tf.keras.layers.Layer):
         super(MaxReLU, self).build(input_shape)
 
     def call(self, inputs):
+        print(inputs)
         return tf.minimum(tf.maximum(inputs, 0 ), tf.maximum(self.max_values, 0))
 
     @classmethod
