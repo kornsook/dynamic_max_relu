@@ -202,7 +202,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
                 # Train the model
                 X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
                 # Train the model
-                model = get_model(X_train.shape[1:], location, activation = "relu")
+                model = get_model(X_train.shape[1:], location, activation = "mrelu")
                 # Compile the model with the custom loss function
                 # model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
                 model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
