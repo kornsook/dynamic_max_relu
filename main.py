@@ -80,7 +80,7 @@ if __name__ == "__main__":
         # test_data_x, y_test = test_data['image'], np.asarray(test_data['label'])
         # x_train = PILListToNumpy(train_data_x, 64, 64, 3)
         # x_test = PILListToNumpy(test_data_x, 64, 64, 3)
-        with open(args.base_dir + '/dataset/tinyimagenet.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
+        with open(args.base_dir + '/datasets/tinyimagenet.pkl', 'rb') as f:  # Python 3: open(..., 'rb')
             x_train, y_train, x_test, y_test = pickle.load(f)
 
         _, x_test, _, y_test = train_test_split(x_test, y_test, test_size = 0.1, random_state=42)
