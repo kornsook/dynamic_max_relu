@@ -205,7 +205,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
                 model = get_model(X_train.shape[1:], location, activation = "relu")
                 # Compile the model with the custom loss function
                 # model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
-                model.compile(optimizer='adam', loss="sparse_categorical_crossentropy", metrics=['accuracy'])
+                model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
                 model.fit(X_train, Y_train, epochs=2000, batch_size=batch_size, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
                 # model = get_model(x_train.shape[1:], location)
                 # # Compile the model with the custom loss function
