@@ -17,7 +17,7 @@ class MaxReLU(tf.keras.layers.Layer):
         super(MaxReLU, self).build(input_shape)
 
     def call(self, inputs):
-        print(inputs)
+        # print(inputs)
         return tf.minimum(tf.maximum(inputs, 0 ), tf.maximum(self.max_values, 0))
 
     @classmethod
