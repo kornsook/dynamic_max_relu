@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
         #Normalize pixel values to be between 0 and 1
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
-        y_train, y_test = y_train.astype(np.int32).squeeze(-1), y_test.astype(np.int32).squeeze(-1)
+        y_train, y_test = y_train.astype(np.int32), y_test.astype(np.int32)
         n_classes = 200
         
     create_model = all_models(n_classes, args.init_max)
