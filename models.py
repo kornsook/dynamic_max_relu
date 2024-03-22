@@ -99,9 +99,9 @@ class all_models:
         model.add(Dropout(0.3))
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256, kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4), bias_regularizer=regularizers.L2(1e-4), activity_regularizer=regularizers.L2(1e-5)))
-            if(activation == "mrelu"):
+            if(activation == "relu"):
                 model.add(MaxReLU(256, init_max_val=self.max_value))
-            elif(activation == "relu"):
+            elif(activation == "mrelu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes, kernel_regularizer=regularizers.L1L2(l1=1e-5, l2=1e-4), bias_regularizer=regularizers.L2(1e-4), activity_regularizer=regularizers.L2(1e-5)))
         model.add(tf.keras.layers.Activation('softmax'))
