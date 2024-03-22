@@ -18,7 +18,8 @@ class MaxReLU(tf.keras.layers.Layer):
 
     def call(self, inputs):
         # print(inputs)
-        return tf.minimum(tf.maximum(inputs, 0 ))#, tf.maximum(self.max_values, 0))
+        # return tf.minimum(tf.maximum(inputs, 0 ), tf.maximum(self.max_values, 0))
+        return tf.maximum(inputs, 0)
 
     @classmethod
     def from_config(cls, config):
