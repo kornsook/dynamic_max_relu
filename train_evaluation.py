@@ -128,9 +128,11 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
             diff_lst = np.sqrt(np.sum(np.square(x_data - new_dataset), axis = (3,2,1)))
     #         print(np.mean(diff_lst))
             for i in range(len(x_data)):
-                if(epsilon == 0.1 and diff_lst[i] > 12): #MNIST
+                if(x_data.shape[1] == 28 and diff_lst[i] > 12): #MNIST
                     revised_new_dataset.append(x_data[i])
-                elif(epsilon == 0.01 and diff_lst[i] > 0.25): #CIFAR10, CIFAR100
+                elif(x_data.shape[1] == 32 and diff_lst[i] > 0.25): #CIFAR10, CIFAR100
+                    revised_new_dataset.append(x_data[i])
+                elif(x_data.shape[1] == 64 and diff_lst[i] > 0.25): #TinyImagenet
                     revised_new_dataset.append(x_data[i])
                 else:
                     revised_new_dataset.append(new_dataset[i])
