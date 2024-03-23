@@ -3,6 +3,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, ReLU, Dropout
 from tensorflow.keras import regularizers
 from MaxReLU import MaxReLU, MaxReLUConv2D
+import math
 class all_models:
     def __init__(self, n_classes, max_value):
         self.n_classes = n_classes
@@ -170,14 +171,16 @@ class all_models:
                 model.add(MaxReLU(input_shape[2], init_max_val=self.max_value))
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
+        ex_h = math.ceil(input_shape[0] / 75.0)
+        ex_w = math.ceil(input_shape[1] / 75.0)
         model.add(tf.keras.layers.Input(shape=input_shape))
-        # model.add(tf.keras.layers.UpSampling2D(size=(3,3)))
+        model.add(tf.keras.layers.UpSampling2D(size=(ex_h,ex_w)))
         backbone = tf.keras.applications.inception_v3.InceptionV3(
             include_top=False,
             weights='imagenet',
             input_tensor=None,
-            # input_shape=(96,96,3),
-            input_shape=input_shape,
+            input_shape=(input_shape[0] * ex_h,input_shape[1] * ex_w,3),
+            # input_shape=input_shape,
             pooling='max',
         )
         model.add(backbone)
