@@ -171,12 +171,13 @@ class all_models:
             elif(activation == "relu"):
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Input(shape=input_shape))
-        model.add(tf.keras.layers.UpSampling2D(size=(3,3)))
+        # model.add(tf.keras.layers.UpSampling2D(size=(3,3)))
         backbone = tf.keras.applications.inception_v3.InceptionV3(
             include_top=False,
             weights='imagenet',
             input_tensor=None,
-            input_shape=(96,96,3),
+            # input_shape=(96,96,3),
+            input_shape=input_shape
             pooling='max',
         )
         model.add(backbone)
