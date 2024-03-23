@@ -58,7 +58,7 @@ def check_range_output(model, x, alpha=1e-5, logger=None):
 
 
 def check_zero_gradients(grad, logger=None):
-    z = grad.view(grad.shape[0], -1).abs().sum(-1)
+    z = grad.reshape(grad.shape[0], -1).abs().sum(-1)
     #print(grad[0, :10])
     if (z == 0).any():
         msg = f'there are {(z == 0).sum()} points with zero gradient!' + \
