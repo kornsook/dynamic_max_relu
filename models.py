@@ -177,7 +177,7 @@ class all_models:
             weights='imagenet',
             input_tensor=None,
             # input_shape=(96,96,3),
-            input_shape=input_shape
+            input_shape=input_shape,
             pooling='max',
         )
         model.add(backbone)
