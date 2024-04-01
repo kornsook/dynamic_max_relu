@@ -659,8 +659,8 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                 x_extra, y_extra = extra_dataset
                 n_original = int(original_to_extra * len(X_train))
                 n_extra = len(X_train) - n_original
-                print(n_original)
-                print(n_extra)
+                # print(n_original)
+                # print(n_extra)
             # Set up an optimizer
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             # Train the model
@@ -677,6 +677,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
             for epoch in range(num_epochs):
                 print(f"\nEpoch {epoch + 1}/{num_epochs}")
                 if extra_dataset and original_to_extra:
+                    print("Combine data...")
                     original_idx = np.random.choice(len(X_train), 
                                                       size=n_original,
                                                       replace =False)
