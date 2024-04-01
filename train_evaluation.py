@@ -119,7 +119,7 @@ def get_failures_from_blackbox(pt_model, correct_pred, y_correct_pred, attacker,
 def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size = 1, norm=np.inf, n_processors=1):
     if(attack in ['rays', 'hsja', 'geoda', 'signflip']): # Black box attack
         if(attack == 'rays'):
-            attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
+            attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 3000, lb = 0, ub = 1)
         elif(attack == 'hsja'):
             batch_size = 1
             attacker = HSJAttack(epsilon = epsilon, p = 'inf', max_queries = 3000, gamma = 1.0, stepsize_search = "geometric_progression", max_num_evals = 10000, init_num_evals = 100, EOT = 1, sigma = 0, lb = 0, ub = 1, batch_size = batch_size)
