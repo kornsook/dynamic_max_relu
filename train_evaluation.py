@@ -453,7 +453,7 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
     for run in range(n_runs):
         path = f"{folder}/run{run}.h5"
         print(f"Run {run}:")
-        model = get_model(x_train.shape[1:], location = location, activation="mrelu")
+        model = get_model(x_train.shape[1:], location = location, activation="relu")
         # Compile the model with the custom loss function
         model.compile(optimizer='adam', metrics=['accuracy'])
         print()
