@@ -130,7 +130,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         pred = model.predict(x_data, verbose=0).argmax(axis = 1)
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
-        pt_model = torch_model(model)
+        # pt_model = torch_model(model)
         p_batch_size = int(math.ceil(len(correct_pred) / n_processors))
         failures = []
         processes = []
@@ -138,6 +138,8 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         for i in range(0, len(correct_pred), p_batch_size):
             sub_st = i
             sub_ed = min(len(correct_pred), i + p_batch_size)
+            new_model = tf.keras.clone_model(model).set_weights(model.get_weights())
+            pt_model = torch_model(new_model)
             p = Process(target = get_failures_from_blackbox, 
                         args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
             p.start()
