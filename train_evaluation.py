@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
-import os
+import os, math
 from pathlib import Path
 from cleverhans.tf2.attacks import fast_gradient_method, madry_et_al
 from cw_attacks import l2_attack
@@ -12,6 +12,7 @@ import pickle
 from autoattack.autoattack import AutoAttack
 from autoattack import utils_tf2
 import torch
+from multiprocessing import Process
 from sklearn.model_selection import train_test_split
 from utils import torch_model
 from BlackboxBench.attacks.decision.rays_attack import RaySAttack
@@ -104,7 +105,17 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
         new_dataset.extend(perturbed_image)
     return tf.convert_to_tensor(new_dataset)
 
-def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size = 1, norm=np.inf):
+def get_failures_from_blackbox(pt_model, correct_pred, y_correct_pred, attacker, failures):
+    for i in tqdm(range(len(correct_pred))):
+        x_batch = correct_pred[i:i+1]
+        y_batch = torch.Tensor(y_correct_pred[i:i+1])
+        attacker.batch_size = 1
+        # print(x_batch.shape)
+        # print(attacker.batch_size)
+        log = attacker.run(x_batch, y_batch, pt_model, False, None)
+    failures.append(attacker.result()["total_failures"])
+    
+def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size = 1, norm=np.inf, n_processors=1):
     if(attack in ['rays', 'hsja', 'geoda', 'signflip']): # Black box attack
         if(attack == 'rays'):
             attacker = RaySAttack(batch_size = batch_size, epsilon = epsilon, p = "inf", max_queries = 10000, lb = 0, ub = 1)
@@ -120,14 +131,29 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
         pt_model = torch_model(model)
-        for i in tqdm(range(0, len(correct_pred), batch_size)):
-            x_batch = correct_pred[i: min(len(correct_pred), i + batch_size)]
-            y_batch = torch.Tensor(y_correct_pred[i: min(len(correct_pred), i + batch_size)])
-            attacker.batch_size = len(x_batch)
-            # print(x_batch.shape)
-            # print(attacker.batch_size)
-            log = attacker.run(x_batch, y_batch, pt_model, False, None)
-        output = attacker.result()["total_failures"] / len(x_data)
+        p_batch_size = int(math.ceil(len(correct_pred) / n_processors))
+        failures = []
+        processes = []
+        print(f"Batch Size: {p_batch_size}")
+        for i in range(0, len(correct_pred), p_batch_size):
+            sub_st = i
+            sub_ed = min(len(correct_pred), i + p_batch_size)
+            p = Process(target = get_failures_from_blackbox, 
+                        args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+        output = sum(failures) / len(x_data)
+
+        # for i in tqdm(range(0, len(correct_pred), batch_size)):
+        #     x_batch = correct_pred[i: min(len(correct_pred), i + batch_size)]
+        #     y_batch = torch.Tensor(y_correct_pred[i: min(len(correct_pred), i + batch_size)])
+        #     attacker.batch_size = len(x_batch)
+        #     # print(x_batch.shape)
+        #     # print(attacker.batch_size)
+        #     log = attacker.run(x_batch, y_batch, pt_model, False, None)
+        # output = attacker.result()["total_failures"] / len(x_data)
     else: # Whitebox attack + Square (blackbox)
         new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
         if(attack == 'cw_l2'):
@@ -227,7 +253,7 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
 #                 print("Already Exists!")
 
 def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
-               , epsilon, batch_size=1, stored_results=None, location="end", attack_type = "whitebox"):
+               , epsilon, batch_size=1, stored_results=None, location="end", attack_type = "whitebox", n_processors=1):
     if(attack_type == "whitebox"):
         info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                     , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
@@ -295,7 +321,13 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
             for acc_attack in acc_attacks:
                 if(len(results[acc_attack]) <= run):
                     print(acc_attack)
-                    tmp_results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
+                    tmp_results[acc_attack].append(compute_robust_accuracy(model, 
+                                                                           x_test, 
+                                                                           y_test, 
+                                                                           epsilon = epsilon, 
+                                                                           attack = acc2attack[acc_attack],
+                                                                           batch_size=batch_size,
+                                                                           n_processors=n_processors))
                 else:
                     tmp_results[acc_attack].append(results[acc_attack][run])
 #                 if(acc_attack == 'cw_l2_perturbation'):
@@ -366,7 +398,8 @@ def adversarial_train_models(n_runs, max_index, folder, get_model, x_train, y_tr
             model.save_weights(path)
 
 def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_train, y_train, x_test, y_test
-               , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5, attack_type="whitebox"):
+               , epsilon, batch_size=1, stored_results=None, location="end", adv_epochs = 5, attack_type="whitebox",
+               n_processors=1):
     if(attack_type == "whitebox"):
         info_list = ['accuracy', 'random_accuracy', 'fgsm_accuracy', 'pgd_accuracy'
                     , 'apgd_ce_accuracy', 'apgd_dlr_accuracy'
@@ -430,7 +463,13 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         results['accuracy'].append(test_accuracy)
         for acc_attack in acc_attacks:
             if(len(results[acc_attack]) <= run):
-                results[acc_attack].append(compute_robust_accuracy(model, x_test, y_test, epsilon = epsilon, attack = acc2attack[acc_attack],batch_size=batch_size))
+                results[acc_attack].append(compute_robust_accuracy(model, 
+                                                                   x_test, 
+                                                                   y_test, 
+                                                                   epsilon = epsilon, 
+                                                                   attack = acc2attack[acc_attack],
+                                                                   batch_size=batch_size,
+                                                                   n_processors=n_processors))
         # if(len(results['mean_max']) <= run):
         #     results['mean_max'].append(np.mean(model.layers[max_index].max_values))
     with open(accuracy_score_path, "wb") as outfile:

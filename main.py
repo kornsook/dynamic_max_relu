@@ -46,6 +46,7 @@ if __name__ == "__main__":
     parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
     parser.add_argument("--init-max", type=int, default=100, help="Initial max value")
+    parser.add_argument("--n-processors", type=int, default=1, help="Number of processors (for attaacks that do not utilize GPU)")
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
@@ -160,7 +161,8 @@ if __name__ == "__main__":
                     x_train, y_train,
                     x_test, y_test, args.eps, batch_size=args.batch_size,
                     location = args.drelu_loc, adv_epochs=args.adv_epochs,
-                    attack_type = args.attack_type)
+                    attack_type = args.attack_type,
+                    n_processors=args.n_processors)
         elif(args.training_type == 'trades'):
             folder += f'/trades_beta={args.trades_beta}'
             result_folder += f'/trades_beta={args.trades_beta}'
@@ -171,7 +173,8 @@ if __name__ == "__main__":
                     x_train, y_train,
                     x_test, y_test, args.eps, batch_size=args.batch_size,
                     location = args.drelu_loc, adv_epochs=args.adv_epochs,
-                    attack_type = args.attack_type)
+                    attack_type = args.attack_type,
+                    n_processors=args.n_processors)
         else:
             results = test(balancers, args.n_runs,
                         max_index, folder,
@@ -179,5 +182,6 @@ if __name__ == "__main__":
                         model_fnc,
                         x_train, y_train,
                         x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc,
-                        attack_type = args.attack_type)
+                        attack_type = args.attack_type,
+                        n_processors=args.n_processors)
     print("Done!")
