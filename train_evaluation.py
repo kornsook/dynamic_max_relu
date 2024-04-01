@@ -146,6 +146,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
                         args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
             p.start()
             processes.append(p)
+            print(i)
         for p in processes:
             p.join()
         output = sum(failures) / len(x_data)
