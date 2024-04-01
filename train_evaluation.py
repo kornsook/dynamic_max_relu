@@ -688,10 +688,11 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                     x_extra_train, y_extra_train = x_extra[extra_idx], y_extra[extra_idx]
                     X_train_final = np.concatenate([x_original_train, x_extra_train], axis=0)
                     Y_train_final = np.concatenate([y_original_train, y_extra_train], axis=0)
-                    shuffled_idx = np.random.choice(len(X_train),
-                                                    size = len(X_train),
+                    shuffled_idx = np.random.choice(len(X_train_final),
+                                                    size = len(X_train_final),
                                                     replace=False)
                     X_train_final, Y_train_final = X_train_final[shuffled_idx], Y_train_final[shuffled_idx]
+                    print("Complete!")
                 else:
                     X_train_final, Y_train_final = X_train, Y_train
                 # Training
