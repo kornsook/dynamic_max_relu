@@ -44,6 +44,8 @@ if __name__ == "__main__":
     parser.add_argument("--training-type", type=str, choices=["normal", "adv_training", "trades"], default="normal", help="Type of training")
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
     parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
+    parser.add_argument("--extra-data-dir", type=str, default=None, help="Path to Extra data")
+    parser.add_argument("--original-to-extra", type=int, default=0.3, help="Original to extra ratio")
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
     parser.add_argument("--init-max", type=int, default=100, help="Initial max value")
     parser.add_argument("--n-processors", type=int, default=1, help="Number of processors (for attaacks that do not utilize GPU)")
@@ -52,6 +54,8 @@ if __name__ == "__main__":
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
     result_folder = f'{args.base_dir}/results/{args.drelu_loc}/{args.model}_{args.dataset}'
     n_classes = 10
+    extra_data = None
+    original_to_extra = args.original_to_extra
     if(args.dataset == "mnist"):
         # Load and preprocess the MNIST dataset
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -90,7 +94,12 @@ if __name__ == "__main__":
         x_train, x_test = (x_train / 255.0).astype(np.float32), (x_test / 255.0).astype(np.float32)
         y_train, y_test = y_train.astype(np.int32), y_test.astype(np.int32)
         n_classes = 200
-        
+    if args.extra_data_dir:
+        extra_file_dir = os.path.join(args.base_dir, args.extra_data_dir, args.dataset + "_1m.npz")
+        data = np.load(extra_file_dir)
+        x_extra, y_extra = (data['image'] / 255.0).astype(np.float32), data['label'].astype(np.int32)
+        extra_data = (x_extra, y_extra)
+
     create_model = all_models(n_classes, args.init_max)
     if(args.model == "dense"):
         model_fnc = create_model.create_dense_model
@@ -145,7 +154,8 @@ if __name__ == "__main__":
             folder += f'/trades_beta={args.trades_beta}'
             trades_train_models(args.n_runs, max_index, folder, model_fnc,
              x_train, y_train, args.eps, args.trades_beta,
-             location = args.drelu_loc, batch_size=args.batch_size)
+             location = args.drelu_loc, batch_size=args.batch_size,
+             extra_dataset=extra_data, original_to_extra=original_to_extra)
         else:
             train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
              x_train, y_train, location = args.drelu_loc, batch_size=args.batch_size)

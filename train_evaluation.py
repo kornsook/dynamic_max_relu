@@ -582,7 +582,9 @@ def trades_loss(model,
     # print(f"Loss Nat: {loss_natural}, Loss Rob: {loss_robust}")
     return loss, loss_natural, loss_robust
 
-def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, epsilon, beta, location="end", batch_size=128):
+def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
+                        epsilon, beta, location="end", batch_size=128, extra_dataset=None,
+                        original_to_extra=None):
     class CustomEarlyStopping(EarlyStopping):
         def __init__(self, monitor='val_loss', patience=0, verbose=0, mode='min', restore_best_weights=False):
             super().__init__(monitor=monitor, patience=patience, verbose=verbose, mode=mode, restore_best_weights=restore_best_weights)
@@ -653,6 +655,10 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
         print(f"Run {run}:")
         if(not os.path.exists(path)):
             X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+            if extra_dataset and original_to_extra:
+                x_extra, y_extra = extra_dataset
+                n_original = int(original_to_extra * len(X_train))
+                n_extra = len(X_train) - n_original
             # Set up an optimizer
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             # Train the model
@@ -668,11 +674,27 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train, 
             early_stop.set_model(model)
             for epoch in range(num_epochs):
                 print(f"\nEpoch {epoch + 1}/{num_epochs}")
-
+                if extra_dataset and original_to_extra:
+                    original_idx = np.random.choice(len(X_train), 
+                                                      size=n_original,
+                                                      replace =False)
+                    x_original_train, y_original_train= X_train[original_idx], y[original_idx]
+                    extra_idx = np.random.choice(len(x_extra),
+                                                 size = n_extra,
+                                                 replace=False)
+                    x_extra_train, y_extra_train = x_extra[extra_idx], y_extra[extra_idx]
+                    X_train_final = np.concatenate([x_original_train, x_extra_train], axis=0)
+                    Y_train_final = np.concatenate([y_original_train, y_extra_train], axis=0)
+                    shuffled_idx = np.random.choice(len(X_train),
+                                                    size = len(X_train),
+                                                    replace=False)
+                    X_train_final, Y_train_final = X_train_final[shuffled_idx], Y_train_final[shuffled_idx]
+                else:
+                    X_train_final, Y_train_final = X_train, Y_train
                 # Training
                 for step in tqdm(range(0, len(X_train), batch_size)):
-                    x_batch = X_train[step:step + batch_size]
-                    y_batch = Y_train[step:step + batch_size]
+                    x_batch = X_train_final[step:step + batch_size]
+                    y_batch = Y_train_final[step:step + batch_size]
                     x_adv = create_adversarial_examples(model, x_batch, y_batch, epsilon = epsilon, attack='pgd', batch_size=batch_size, verbose = False)
                     with tf.GradientTape() as tape:
                         loss, _ , _ = trades_loss(tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
