@@ -90,6 +90,13 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
             adversary.attacks_to_run = ['apgd-dlr']
             x_adv, y_adv = adversary.run_standard_evaluation(torch_testX, torch_testY, bs=len(original_image)
                                                              , return_labels=True)
+            perturbed_image = np.moveaxis(x_adv.cpu().numpy(), 1, 3).tolist()       
+        elif(attack == 'square'):
+            torch_testX = torch.from_numpy( np.transpose(original_image, (0, 3, 1, 2)) ).float().cuda()
+            torch_testY = torch.from_numpy( true_label ).long().cuda()
+            adversary.attacks_to_run = ['square']
+            x_adv, y_adv = adversary.run_standard_evaluation(torch_testX, torch_testY, bs=len(original_image)
+                                                             , return_labels=True)
             perturbed_image = np.moveaxis(x_adv.cpu().numpy(), 1, 3).tolist()        
         elif(attack == 'random'):
             perturbed_image = random_noise(model, tf.convert_to_tensor(original_image), epsilon)
@@ -121,7 +128,7 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
             # print(attacker.batch_size)
             log = attacker.run(x_batch, y_batch, pt_model, False, None)
         output = attacker.result()["total_failures"] / len(x_data)
-    else: # Whitebox attack
+    else: # Whitebox attack + Square (blackbox)
         new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
         if(attack == 'cw_l2'):
             revised_new_dataset = []
@@ -157,10 +164,10 @@ def plot_accuracy(results, path, attack_type):
     else:
         # plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
         plt.plot(results['balancers'],np.mean(results['hsja_accuracy'], axis = 0))
-        plt.plot(results['balancers'],np.mean(results['geoda_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['square_accuracy'], axis = 0))
         # plt.plot(results['balancers'],np.mean(results['signflip_accuracy'], axis = 0))
         plt.setp(plt.gca().lines, linewidth=2)
-        plt.legend(['Clean', 'HSJA', 'GeoDA'])
+        plt.legend(['Clean', 'HSJA', 'Sqaure'])
     plt.xscale('log')
     plt.xlabel('Balancer')
     plt.ylabel('Accuracy')
@@ -238,15 +245,16 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'geoda_accuracy', 'hsja_accuracy'
+        info_list = ['accuracy', 'random_accuracy', 'geoda_accuracy', 'hsja_accuracy','square_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'geoda_accuracy', 'hsja_accuracy']
+        acc_attacks = ['random_accuracy', 'square_accuracy', 'hsja_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
             'hsja_accuracy': 'hsja',
             'geoda_accuracy': 'geoda',
-            'signflip_accuracy': 'signflip'
+            'signflip_accuracy': 'signflip',
+            'square_accuracy': 'square'
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}/blackbox'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
@@ -264,9 +272,6 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
     path.mkdir(parents=True, exist_ok=True)
     results_path = Path(result_folder)
     results_path.mkdir(parents=True, exist_ok=True)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                              patience=5, min_lr=0.0001)
-    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
     for run in range(n_runs):
         tmp_results = {}
         for info in info_list:
