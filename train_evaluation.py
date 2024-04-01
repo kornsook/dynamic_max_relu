@@ -694,7 +694,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                 else:
                     X_train_final, Y_train_final = X_train, Y_train
                 # Training
-                for step in tqdm(range(0, len(X_train), batch_size)):
+                for step in tqdm(range(0, len(X_train_final), batch_size)):
                     x_batch = X_train_final[step:step + batch_size]
                     y_batch = Y_train_final[step:step + batch_size]
                     x_adv = create_adversarial_examples(model, x_batch, y_batch, epsilon = epsilon, attack='pgd', batch_size=batch_size, verbose = False)
