@@ -422,15 +422,16 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'hsja_accuracy', 'geoda_accuracy'
+        info_list = ['accuracy', 'random_accuracy', 'square_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'geoda_accuracy']
+        acc_attacks = ['random_accuracy', 'square_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
             'hsja_accuracy': 'hsja',
             'geoda_accuracy': 'geoda',
-            'signflip_accuracy': 'signflip'
+            'signflip_accuracy': 'signflip',
+            'square_accuracy': 'square'
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}/blackbox'
     accuracy_score_path = result_folder + '/accuracy_scores.pkl'
