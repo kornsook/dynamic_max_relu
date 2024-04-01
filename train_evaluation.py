@@ -194,11 +194,11 @@ def plot_accuracy(results, path, attack_type):
         plt.legend(['Clean', 'FGSM', 'PGD', 'APGD_CE', 'APGD_DLR','CW_L2'])
     else:
         # plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
-        plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
+        # plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
         plt.plot(results['balancers'],np.mean(results['square_accuracy'], axis = 0))
         # plt.plot(results['balancers'],np.mean(results['signflip_accuracy'], axis = 0))
         plt.setp(plt.gca().lines, linewidth=2)
-        plt.legend(['Clean', 'Rays', 'Square'])
+        plt.legend(['Clean', 'Square'])
     plt.xscale('log')
     plt.xlabel('Balancer')
     plt.ylabel('Accuracy')
@@ -276,9 +276,9 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'rays_accuracy','square_accuracy'
+        info_list = ['accuracy', 'random_accuracy','square_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'rays_accuracy', 'square_accuracy']
+        acc_attacks = ['random_accuracy', 'square_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
