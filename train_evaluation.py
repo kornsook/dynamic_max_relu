@@ -112,7 +112,7 @@ def get_failures_from_blackbox(pt_model, correct_pred, y_correct_pred, attacker,
         attacker.batch_size = 1
         # print(x_batch.shape)
         # print(attacker.batch_size)
-        print(x_batch)
+        # print(x_batch)
         log = attacker.run(x_batch, y_batch, pt_model, False, None)
     failures.append(attacker.result()["total_failures"])
 
@@ -139,7 +139,8 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         for i in range(0, len(correct_pred), p_batch_size):
             sub_st = i
             sub_ed = min(len(correct_pred), i + p_batch_size)
-            new_model = tf.keras.models.clone_model(model).set_weights(model.get_weights())
+            new_model = tf.keras.models.clone_model(model)
+            new_model.set_weights(model.get_weights())
             pt_model = torch_model(new_model)
             p = Process(target = get_failures_from_blackbox, 
                         args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
