@@ -41,7 +41,7 @@ def create_adversarial_examples(model, x_data, y_data, epsilon=0.1, attack = 'fg
     new_dataset = []
     if(attack == 'cw_l2'):
         y_data = tf.one_hot(y_data, model.output_shape[-1])
-    if(attack == 'apgd_ce' or attack == 'apgd_dlr'):
+    if(attack in ['apgd_ce', 'apgd_dlr', 'square']):
         tmp_model = tf.keras.models.Model(inputs = model.inputs, outputs = model.layers[-2].output)
         tmp_model = utils_tf2.ModelAdapter(tmp_model, num_classes = model.layers[-1].output_shape[-1])
         adversary = AutoAttack(tmp_model, norm='Linf', eps=epsilon, version='rand', is_tf_model=True
