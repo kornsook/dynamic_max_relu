@@ -131,34 +131,34 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
         pred = model.predict(x_data, verbose=0).argmax(axis = 1)
         correct_pred = x_data[np.where(pred == y_data)]
         y_correct_pred = y_data[np.where(pred == y_data)]
-        # pt_model = torch_model(model)
-        p_batch_size = int(math.ceil(len(correct_pred) / n_processors))
-        failures = []
-        processes = []
-        print(f"Batch Size: {p_batch_size}")
-        for i in range(0, len(correct_pred), p_batch_size):
-            sub_st = i
-            sub_ed = min(len(correct_pred), i + p_batch_size)
-            new_model = tf.keras.models.clone_model(model)
-            new_model.set_weights(model.get_weights())
-            pt_model = torch_model(new_model)
-            p = Process(target = get_failures_from_blackbox, 
-                        args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
-            p.start()
-            processes.append(p)
-            print(i)
-        for p in processes:
-            p.join()
-        output = sum(failures) / len(x_data)
+        pt_model = torch_model(model)
+        # p_batch_size = int(math.ceil(len(correct_pred) / n_processors))
+        # failures = []
+        # processes = []
+        # print(f"Batch Size: {p_batch_size}")
+        # for i in range(0, len(correct_pred), p_batch_size):
+        #     sub_st = i
+        #     sub_ed = min(len(correct_pred), i + p_batch_size)
+        #     new_model = tf.keras.models.clone_model(model)
+        #     new_model.set_weights(model.get_weights())
+        #     pt_model = torch_model(new_model)
+        #     p = Process(target = get_failures_from_blackbox, 
+        #                 args=(pt_model, correct_pred[sub_st:sub_ed], y_correct_pred[sub_st:sub_ed], attacker, failures))
+        #     p.start()
+        #     processes.append(p)
+        #     print(i)
+        # for p in processes:
+        #     p.join()
+        # output = sum(failures) / len(x_data)
 
-        # for i in tqdm(range(0, len(correct_pred), batch_size)):
-        #     x_batch = correct_pred[i: min(len(correct_pred), i + batch_size)]
-        #     y_batch = torch.Tensor(y_correct_pred[i: min(len(correct_pred), i + batch_size)])
-        #     attacker.batch_size = len(x_batch)
-        #     # print(x_batch.shape)
-        #     # print(attacker.batch_size)
-        #     log = attacker.run(x_batch, y_batch, pt_model, False, None)
-        # output = attacker.result()["total_failures"] / len(x_data)
+        for i in tqdm(range(0, len(correct_pred), batch_size)):
+            x_batch = correct_pred[i: min(len(correct_pred), i + batch_size)]
+            y_batch = torch.Tensor(y_correct_pred[i: min(len(correct_pred), i + batch_size)])
+            attacker.batch_size = len(x_batch)
+            # print(x_batch.shape)
+            # print(attacker.batch_size)
+            log = attacker.run(x_batch, y_batch, pt_model, False, None)
+        output = attacker.result()["total_failures"] / len(x_data)
     else: # Whitebox attack + Square (blackbox)
         new_dataset = create_adversarial_examples(model, x_data, y_data, epsilon, attack, batch_size, norm)
         if(attack == 'cw_l2'):
@@ -276,9 +276,9 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
         }
         result_folder += f'/nruns={n_runs}_maxindex={max_index}_eps={epsilon}_batchsize={batch_size}'
     else:
-        info_list = ['accuracy', 'random_accuracy', 'geoda_accuracy', 'hsja_accuracy','square_accuracy'
+        info_list = ['accuracy', 'random_accuracy', 'rays_accuracy','square_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'square_accuracy']
+        acc_attacks = ['random_accuracy', 'rays_accuracy', 'square_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
