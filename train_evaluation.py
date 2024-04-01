@@ -114,7 +114,7 @@ def get_failures_from_blackbox(pt_model, correct_pred, y_correct_pred, attacker,
         # print(attacker.batch_size)
         log = attacker.run(x_batch, y_batch, pt_model, False, None)
     failures.append(attacker.result()["total_failures"])
-    
+
 def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm', batch_size = 1, norm=np.inf, n_processors=1):
     if(attack in ['rays', 'hsja', 'geoda', 'signflip']): # Black box attack
         if(attack == 'rays'):
@@ -273,7 +273,7 @@ def test(balancers, n_runs, max_index, folder, result_folder, get_model, x_train
     else:
         info_list = ['accuracy', 'random_accuracy', 'geoda_accuracy', 'hsja_accuracy','square_accuracy'
                     ,'mean_max']
-        acc_attacks = ['random_accuracy', 'square_accuracy', 'hsja_accuracy']
+        acc_attacks = ['random_accuracy', 'hsja_accuracy', 'square_accuracy']
         acc2attack = {
             'random_accuracy': 'random',
             'rays_accuracy': 'rays',
