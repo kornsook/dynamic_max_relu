@@ -112,6 +112,7 @@ def get_failures_from_blackbox(pt_model, correct_pred, y_correct_pred, attacker,
         attacker.batch_size = 1
         # print(x_batch.shape)
         # print(attacker.batch_size)
+        print(x_batch)
         log = attacker.run(x_batch, y_batch, pt_model, False, None)
     failures.append(attacker.result()["total_failures"])
 
