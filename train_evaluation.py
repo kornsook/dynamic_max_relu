@@ -659,6 +659,8 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                 x_extra, y_extra = extra_dataset
                 n_original = int(original_to_extra * len(X_train))
                 n_extra = len(X_train) - n_original
+                print(n_original)
+                print(n_extra)
             # Set up an optimizer
             optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
             # Train the model
@@ -678,7 +680,7 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                     original_idx = np.random.choice(len(X_train), 
                                                       size=n_original,
                                                       replace =False)
-                    x_original_train, y_original_train= X_train[original_idx], y[original_idx]
+                    x_original_train, y_original_train= X_train[original_idx], Y_train[original_idx]
                     extra_idx = np.random.choice(len(x_extra),
                                                  size = n_extra,
                                                  replace=False)
