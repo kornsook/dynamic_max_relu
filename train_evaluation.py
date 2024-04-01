@@ -194,11 +194,11 @@ def plot_accuracy(results, path, attack_type):
         plt.legend(['Clean', 'FGSM', 'PGD', 'APGD_CE', 'APGD_DLR','CW_L2'])
     else:
         # plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
-        plt.plot(results['balancers'],np.mean(results['hsja_accuracy'], axis = 0))
+        plt.plot(results['balancers'],np.mean(results['rays_accuracy'], axis = 0))
         plt.plot(results['balancers'],np.mean(results['square_accuracy'], axis = 0))
         # plt.plot(results['balancers'],np.mean(results['signflip_accuracy'], axis = 0))
         plt.setp(plt.gca().lines, linewidth=2)
-        plt.legend(['Clean', 'HSJA', 'Sqaure'])
+        plt.legend(['Clean', 'Rays', 'Square'])
     plt.xscale('log')
     plt.xlabel('Balancer')
     plt.ylabel('Accuracy')
