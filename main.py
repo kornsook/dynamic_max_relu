@@ -159,8 +159,11 @@ if __name__ == "__main__":
              location = args.drelu_loc, batch_size=args.batch_size,
              extra_dataset=extra_data, original_to_extra=original_to_extra)
         else:
-            train_models(balancers, args.n_runs, max_index, folder, result_folder, model_fnc,
-             x_train, y_train, location = args.drelu_loc, batch_size=args.batch_size)
+            if args.extra_data_from:
+                folder += f'/mrelu_{args.extra_data_from}'
+            train_models(balancers, args.n_runs, max_index, folder, model_fnc,
+             x_train, y_train, location = args.drelu_loc, batch_size=args.batch_size,
+             extra_dataset=extra_data, original_to_extra=original_to_extra)
     elif(args.type == "test"):
         print("Testing...")
         if(args.training_type == 'adv_training'):
@@ -191,6 +194,9 @@ if __name__ == "__main__":
                     attack_type = args.attack_type,
                     n_processors=args.n_processors)
         else:
+            if args.extra_data_from:
+                folder += f"/mrelu_{args.extra_data_from}"
+                result_folder += f"/mrelu_{args.extra_data_from}"
             results = test(balancers, args.n_runs,
                         max_index, folder,
                         result_folder,

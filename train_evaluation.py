@@ -225,7 +225,9 @@ def plot_mean_max(results, path):
     plt.ylabel('Mean Max')
     plt.savefig(path, dpi=450, bbox_inches="tight")
     plt.show()
-def train_models(balancers, n_runs, max_index, folder, result_folder, get_model, x_train, y_train, location="end", batch_size=128):
+def train_models(balancers, n_runs, max_index, folder, get_model, x_train, 
+                 y_train, location="end", batch_size=128, extra_dataset=None,
+                 original_to_extra=None):
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                               patience=5, min_lr=0.0001)
 
@@ -241,12 +243,34 @@ def train_models(balancers, n_runs, max_index, folder, result_folder, get_model,
             if(not os.path.exists(path)):
                 # Train the model
                 X_train, X_val, Y_train, Y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+                if extra_dataset and original_to_extra:
+                    x_extra, y_extra = extra_dataset
+                    n_original = int(original_to_extra * len(X_train))
+                    n_extra = len(X_train) - n_original
+                    print("Combine data...")
+                    original_idx = np.random.choice(len(X_train), 
+                                                      size=n_original,
+                                                      replace =False)
+                    x_original_train, y_original_train= X_train[original_idx], Y_train[original_idx]
+                    extra_idx = np.random.choice(len(x_extra),
+                                                 size = n_extra,
+                                                 replace=False)
+                    x_extra_train, y_extra_train = x_extra[extra_idx], y_extra[extra_idx]
+                    X_train_final = np.concatenate([x_original_train, x_extra_train], axis=0)
+                    Y_train_final = np.concatenate([y_original_train, y_extra_train], axis=0)
+                    shuffled_idx = np.random.choice(len(X_train_final),
+                                                    size = len(X_train_final),
+                                                    replace=False)
+                    X_train_final, Y_train_final = X_train_final[shuffled_idx], Y_train_final[shuffled_idx]
+                    print("Complete!")
+                else:
+                    X_train_final, Y_train_final = X_train, Y_train
                 # Train the model
-                model = get_model(X_train.shape[1:], location, activation = "mrelu")
+                model = get_model(X_train_final.shape[1:], location, activation = "mrelu")
                 # Compile the model with the custom loss function
                 # model.compile(optimizer='adam', loss=custom_loss(model, alpha=0, index = max_index), metrics=['accuracy'])
                 model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
-                model.fit(X_train, Y_train, epochs=2000, batch_size=batch_size, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
+                model.fit(X_train_final, Y_train_final, epochs=2000, batch_size=batch_size, validation_data=(X_val, Y_val), callbacks=[reduce_lr, early_stop], verbose=1)
                 # model = get_model(x_train.shape[1:], location)
                 # # Compile the model with the custom loss function
                 # # model.compile(optimizer='adam', loss=custom_loss(model, alpha=balancer, index = max_index), metrics=['accuracy'])
