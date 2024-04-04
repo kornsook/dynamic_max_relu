@@ -51,8 +51,6 @@ if __name__ == "__main__":
     parser.add_argument("--n-processors", type=int, default=1, help="Number of processors (for attaacks that do not utilize GPU)")
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
-    print("FFFF")
-    print(args.original_to_extra)
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
     result_folder = f'{args.base_dir}/results/{args.drelu_loc}/{args.model}_{args.dataset}'
     n_classes = 10
