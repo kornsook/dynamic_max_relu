@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--adv-epochs", type=int, default=50, help="Adversarial training epochs")
     parser.add_argument("--trades-beta", type=int, default=1, help="TRADES beta")
     parser.add_argument("--extra-data-from", type=str, default=None, help="Path to Extra data")
-    parser.add_argument("--original-to-extra", type=int, default=0.3, help="Original to extra ratio")
+    parser.add_argument("--original-to-extra", type=float, default=0.3, help="Original to extra ratio")
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
     parser.add_argument("--init-max", type=int, default=100, help="Initial max value")
     parser.add_argument("--n-processors", type=int, default=1, help="Number of processors (for attaacks that do not utilize GPU)")
