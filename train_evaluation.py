@@ -176,7 +176,14 @@ def compute_robust_accuracy(model, x_data, y_data, epsilon=0.1, attack = 'fgsm',
                     revised_new_dataset.append(new_dataset[i])
             new_dataset = tf.convert_to_tensor(revised_new_dataset)
     #     else:
-        _, output = model.evaluate(new_dataset, y_data)
+        try:
+            _, output = model.evaluate(new_dataset, y_data)
+        except:
+            print(new_dataset)
+            print(y_data)
+            print(new_dataset.shape)
+            print(y_data.shape)
+            exit()
     return output
 
 def plot_accuracy(results, path, attack_type):
@@ -482,7 +489,11 @@ def adversarial_test(n_runs, max_index, folder, result_folder, get_model, x_trai
         model.compile(optimizer='adam', metrics=['accuracy'])
         print()
         if(os.path.exists(path)):
-            model.load_weights(path)
+            try:
+                model.load_weights(path)
+            except:
+                model = get_model(x_train.shape[1:], location = location, activation="mrelu")
+                model.compile(optimizer='adam', metrics=['accuracy'])
         else:
             # Train the model
             print(f"No model for run {run}")
@@ -748,3 +759,68 @@ def trades_train_models(n_runs, max_index, folder, get_model, x_train, y_train,
                     model.set_weights(early_stop.model.get_weights())
                     break
             model.save_weights(path)
+
+def evaluate_eps_generalization(dataset, attack, x_test, y_test, location, get_model, model_folder, balancer, res_folder, n_runs = 3, batch_size = 128):
+    if int(balancer) == balancer:
+        balancer = int(balancer)
+    if attack == "square":
+        eps_lst = [0.001, 0.01, 0.02]
+    else:
+        eps_lst = [0.001, 0.005, 0.01, 0.015, 0.02, 0.025, 0.03]
+    # arch_lst = ["dense", "shallow_cnn", "resnet50", "resnet101", "mobilenetv2", "inceptionv3"]
+    if dataset in ["cifar10", "cifar100"]:
+        training_lst = [".","adv_training", "trades_beta=1","trades_beta=6", "mrelu_EDM", "trades_beta=5_EDM"]
+        legends = ["mReLU","AT", "TRADES_1","TRADES_6", "mReLU_EDM", "TRADES_5_EDM"]
+    else:
+        training_lst = [".","adv_training", "trades_beta=1","trades_beta=6", "mrelu_EDM", "trades_beta=5_EDM", "trades_beta=8_EDM"]
+        legends = ["mReLU","AT", "TRADES_1","TRADES_6", "mReLU_EDM", "TRADES_5_EDM", "TRADES_8_EDM"]
+    res = {}
+    results_path = Path(res_folder)
+    results_path.mkdir(parents=True, exist_ok=True)
+    if os.path.exists(res_folder + f"/balancer{balancer}_{attack}_eps.pkl"):
+        with open(res_folder + f"/balancer{balancer}_{attack}_eps.pkl", "rb") as outfile:
+            res = pickle.load(outfile)
+    else:
+        for training in training_lst:
+            res[training] = {}
+            res[training] = [[] for _ in range(len(eps_lst))]
+            for idx, eps in enumerate(eps_lst):
+                for run in range(n_runs):
+                    print(f"Model: {training}, Eps: {eps}, Run {run}:")
+                    act = "mrelu" if training in [".", "mrelu_EDM"] else "relu"
+                    path = f"{model_folder}/{training}/balancer{balancer}_run{run}.h5" if training in [".", "mrelu_EDM"] else f"{model_folder}/{training}/run{run}.h5"
+                    model = get_model(x_test.shape[1:], location = location, activation=act)
+                    # Compile the model with the custom loss function
+                    model.compile(optimizer='adam', metrics=['accuracy'])
+                    # print(path)
+                    print()
+                    if(os.path.exists(path)):
+                        try:
+                            model.load_weights(path)
+                        except:
+                            model = get_model(x_test.shape[1:], location = location, activation="mrelu")
+                            model.compile(optimizer='adam', metrics=['accuracy'])
+                            model.load_weights(path)
+                    else:
+                        print(f"No model for {training} run {run}")
+                        continue
+                    res[training][idx].append(compute_robust_accuracy(model, 
+                                                                        x_test, 
+                                                                        y_test, 
+                                                                        epsilon = eps, 
+                                                                        attack = attack,
+                                                                        batch_size=batch_size))
+            res[training] = np.asarray(res[training])
+        with open(res_folder + f"/balancer{balancer}_{attack}_eps.pkl", "wb") as outfile:
+            pickle.dump(res, outfile)
+    # print(res["."])
+    plt.rcParams.update({'font.size': 14})  # Change the 14 to your desired font size
+    plt.setp(plt.gca().lines, linewidth=2)
+    for training in training_lst:
+        plt.plot(eps_lst, np.mean(res[training], axis=1))
+    plt.xlabel("Perturbation Bound")
+    plt.ylabel("Robust Accuracy")
+    plt.legend(legends)    
+    plt.savefig(res_folder + f"/balancer{balancer}_{attack}_eps.pdf", dpi=450, bbox_inches="tight")
+    plt.show()
+    

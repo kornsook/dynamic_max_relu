@@ -18,7 +18,7 @@ import torch
 from sklearn.model_selection import train_test_split
 from MaxReLU import MaxReLU
 from models import all_models
-from train_evaluation import train_models,test, adversarial_train_models, adversarial_test, trades_train_models
+from train_evaluation import train_models,test, adversarial_train_models, adversarial_test, trades_train_models, evaluate_eps_generalization
 import argparse
 import pickle
 # from datasets import load_dataset
@@ -49,6 +49,9 @@ if __name__ == "__main__":
     parser.add_argument("--attack-type", type=str, choices=["whitebox", "blackbox"], default="whitebox", help="Type of attack")
     parser.add_argument("--init-max", type=int, default=100, help="Initial max value")
     parser.add_argument("--n-processors", type=int, default=1, help="Number of processors (for attaacks that do not utilize GPU)")
+    parser.add_argument("--test-type", type=str, choices=["normal", "eps"], default="normal", help="Type of test")
+    parser.add_argument("--balancer", type=float, default=1, help="Balancer for eps test")
+    parser.add_argument("--attack", type=str, choices=['fgsm', 'pgd', 'apgd_ce', 'apgd_dlr', 'square'],  help="Attack name for eps test")
     args = parser.parse_args()
     balancers = [0, 1e-7, 0.00001, 0.001, 0.1, 1, 100]
     folder = f'{args.base_dir}/models/{args.drelu_loc}/{args.model}_{args.dataset}'
@@ -166,43 +169,46 @@ if __name__ == "__main__":
              extra_dataset=extra_data, original_to_extra=original_to_extra)
     elif(args.type == "test"):
         print("Testing...")
-        if(args.training_type == 'adv_training'):
-            folder += '/adv_training'
-            result_folder += '/adv_training'
-            results = adversarial_test(args.n_runs,
-                    max_index, folder,
-                    result_folder,
-                    model_fnc,
-                    x_train, y_train,
-                    x_test, y_test, args.eps, batch_size=args.batch_size,
-                    location = args.drelu_loc, adv_epochs=args.adv_epochs,
-                    attack_type = args.attack_type,
-                    n_processors=args.n_processors)
-        elif(args.training_type == 'trades'):
-            folder += f'/trades_beta={args.trades_beta}'
-            result_folder += f'/trades_beta={args.trades_beta}'
-            if args.extra_data_from:
-                folder += f"_{args.extra_data_from}"
-                result_folder += f"_{args.extra_data_from}"
-            results = adversarial_test(args.n_runs,
-                    max_index, folder,
-                    result_folder,
-                    model_fnc,
-                    x_train, y_train,
-                    x_test, y_test, args.eps, batch_size=args.batch_size,
-                    location = args.drelu_loc, adv_epochs=args.adv_epochs,
-                    attack_type = args.attack_type,
-                    n_processors=args.n_processors)
+        if args.test_type == "eps":
+            evaluate_eps_generalization(args.dataset, args.attack, x_test, y_test, args.drelu_loc, model_fnc, folder, args.balancer, result_folder, batch_size=args.batch_size, n_runs = args.n_runs)
         else:
-            if args.extra_data_from:
-                folder += f"/mrelu_{args.extra_data_from}"
-                result_folder += f"/mrelu_{args.extra_data_from}"
-            results = test(balancers, args.n_runs,
+            if(args.training_type == 'adv_training'):
+                folder += '/adv_training'
+                result_folder += '/adv_training'
+                results = adversarial_test(args.n_runs,
                         max_index, folder,
                         result_folder,
                         model_fnc,
                         x_train, y_train,
-                        x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc,
+                        x_test, y_test, args.eps, batch_size=args.batch_size,
+                        location = args.drelu_loc, adv_epochs=args.adv_epochs,
                         attack_type = args.attack_type,
                         n_processors=args.n_processors)
+            elif(args.training_type == 'trades'):
+                folder += f'/trades_beta={args.trades_beta}'
+                result_folder += f'/trades_beta={args.trades_beta}'
+                if args.extra_data_from:
+                    folder += f"_{args.extra_data_from}"
+                    result_folder += f"_{args.extra_data_from}"
+                results = adversarial_test(args.n_runs,
+                        max_index, folder,
+                        result_folder,
+                        model_fnc,
+                        x_train, y_train,
+                        x_test, y_test, args.eps, batch_size=args.batch_size,
+                        location = args.drelu_loc, adv_epochs=args.adv_epochs,
+                        attack_type = args.attack_type,
+                        n_processors=args.n_processors)
+            else:
+                if args.extra_data_from:
+                    folder += f"/mrelu_{args.extra_data_from}"
+                    result_folder += f"/mrelu_{args.extra_data_from}"
+                results = test(balancers, args.n_runs,
+                            max_index, folder,
+                            result_folder,
+                            model_fnc,
+                            x_train, y_train,
+                            x_test, y_test, args.eps, batch_size=args.batch_size, location = args.drelu_loc,
+                            attack_type = args.attack_type,
+                            n_processors=args.n_processors)
     print("Done!")

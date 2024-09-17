@@ -47,8 +47,11 @@ class all_models:
         if(location == "end"):
             model.add(tf.keras.layers.Dense(256))
             if(activation == "mrelu"):
+                # model.add(tf.keras.layers.Dense(256))
                 model.add(MaxReLU(256, init_max_val=self.max_value))
             elif(activation == "relu"):
+                # model.add(tf.keras.layers.Dense(256, activation="relu"))
+                # model.add(MaxReLU(256, init_max_val=self.max_value))
                 model.add(tf.keras.layers.ReLU())
         model.add(tf.keras.layers.Dense(self.n_classes))
         model.add(tf.keras.layers.Activation('softmax'))
